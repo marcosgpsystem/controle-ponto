@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Ponto Inteligente (IndexedDB)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Área do Sistema (Escondida antes do Login) */
+        #conteudo-sistema {
+            display: none;
+            width: 100%;
+            max-width: 850px;
+        }
+
+        .container {
+            width: 100%;
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #0f172a;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .info-banner {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .card-panel {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-formulario {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #1e293b;
+            background: #ffffff;
+            outline: none;
+            width: 100%;
+            height: 42px;
+            transition: border-color 0.2s;
+        }
+
+        textarea {
+            height: auto;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .input-compacto {
+            height: 35px !important;
+            padding: 4px 8px !important;
+            font-size: 0.85rem !important;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            height: 42px;
+        }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-warning:hover { background: #b45309; }
+        .btn-danger-outline { background: #ffffff; border: 1px solid #ef4444; color: #ef4444; }
+        .btn-danger-outline:hover { background: #fef2f2; }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+        .btn-secondary:hover { background: #cbd5e1; }
+
+        .btn-mini-banco {
+            padding: 0.15rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            background: #10b981;
+            color: white;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            height: auto;
+            transition: background 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .btn-mini-banco:hover { background: #059669; }
+        .btn-mini-banco:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; }
+
+        .resumo-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            background: #f8fafc;
+            margin-bottom: 1.5rem;
+        }
+
+        .resumo-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .resumo-item { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.25rem;
+        }
+        
+        .resumo-label { 
+            font-size: 0.75rem; 
+            color: #64748b; 
+            font-weight: 600;
+        }
+        
+        .resumo-value { 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            word-wrap: break-word;
+        }
+
+        .status-ponto {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .progress-container { height: 6px; background: #e2e8f0; border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
+        .progress-bar { height: 100%; background: #10b981; width: 0%; transition: width 0.3s; }
+
+        .table-wrapper { margin-bottom: 1.5rem; overflow-x: auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; }
+        th { color: #64748b; font-weight: 600; background: #f8fafc; }
+
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 0.75rem; }
+        .badge-entrada { background: #e6f4ea; color: #137333; }
+        .badge-almoco { background: #fef7e0; color: #b06000; }
+        .badge-volta { background: #e8f0fe; color: #1a73e8; }
+        .badge-saida { background: #fce8e6; color: #c5221f; }
+        .badge-abono { background: #f3e8ff; color: #6b21a8; }
+
+        .painel-estatisticas-box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; background: #ffffff; }
+        .grid-estatisticas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 0.5rem; }
+        .card-estatistica { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+        .card-estatistica-title { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .card-estatistica-value { font-size: 1.3rem; font-weight: 700; color: #0f172a; }
+
+        .central-backup-box { background-color: #f0fdf4; border: 1px dashed #10b981; padding: 1.25rem; border-radius: 12px; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+        .backup-header-text { font-size: 0.85rem; color: #166534; line-height: 1.5; }
+        .backup-row-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+        /* Estilo Compartilhado para Modais */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-box {
+            background: #ffffff;
+            width: 90%;
+            max-width: 450px;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+        }
+
+        .modal-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .link-alternar-auth {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #2563eb;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 0.5rem;
+        }
+
+        .user-logado-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            background: #f8fafc;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        footer { text-align: center; font-size: 0.8rem; color: #64748b; margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; }
+
+        @media (max-width: 600px) {
+            .grid-formulario, .grid-estatisticas, .resumo-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="modal-overlay" id="modal-auth" style="display: flex;">
+        <div class="modal-box">
+            <div id="wrapper-login">
+                <div class="modal-title">🔐 Acessar Sistema</div>
+                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Insira suas credenciais para gerenciar o ponto</p>
+                
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>👤 Usuário</label>
+                    <input type="text" id="login-usuario" placeholder="Digite seu usuário">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label>🔑 Senha</label>
+                    <input type="password" id="login-senha" placeholder="Digite sua senha">
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;" id="btn-executar-login">Entrar</button>
+                <div class="link-alternar-auth" id="ir-para-cadastro">Primeiro acesso? Cadastre um usuário</div>
+            </div>
+
+            <div id="wrapper-cadastro" style="display: none;">
+                <div class="modal-title">📝 Criar Nova Conta</div>
+                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Defina os dados de acesso local</p>
+                
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>👤 Definir Usuário</label>
+                    <input type="text" id="cadastro-usuario" placeholder="Ex: marcos.vinicius">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label>🔑 Definir Senha</label>
+                    <input type="password" id="cadastro-senha" placeholder="Crie uma senha segura">
+                </div>
+                
+                <button class="btn btn-success" style="width: 100%;" id="btn-executar-cadastro">Cadastrar e Entrar</button>
+                <div class="link-alternar-auth" id="ir-para-login">Já tenho conta, voltar para o Login</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="conteudo-sistema">
+        <div class="container">
+            <header>
+                <div class="user-logado-header">
+                    <span>👤 Usuário: <strong id="lbl-nome-usuario">...</strong></span>
+                    <button class="btn btn-danger-outline" id="btn-logout" style="height:28px; padding:0 0.5rem; font-size:11px;">🚪 Sair</button>
+                </div>
+                <h1>Controle de Ponto Inteligente</h1>
+            </header>
+
+            <div class="info-banner" id="banner-trabalho-continuous" style="display: none;">
+                ⏱️ <span id="texto-banner-trabalho">Trabalhando direto de forma contínua...</span>
+            </div>
+
+            <div class="card-panel">
+                <div class="grid-formulario">
+                    <div class="form-group">
+                        <label>📅 Data de Trabalho</label>
+                        <input type="date" id="ponto-data">
+                    </div>
+                    <div class="form-group">
+                        <label>📌 Tipo de Registro</label>
+                        <select id="ponto-tipo">
+                            <option value="Entrada">Entrada</option>
+                            <option value="Almoço (Saída)">Almoço (Saída)</option>
+                            <option value="Volta do Almoço">Volta do Almoço</option>
+                            <option value="Saída Final">Saída Final</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>⏰ Horário</label>
+                        <input type="time" id="ponto-hora">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label>📸 Anexar Comprovante Impresso (Opcional)</label>
+                    <input type="file" id="ponto-comprovante" accept="image/*" capture="environment" style="padding: 5px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem; margin-top: 0.5rem;">
+                    <button class="btn btn-primary" style="width: 100%;" id="btn-registrar">Registrar Horário</button>
+                </div>
+
+                <div class="form-group" style="border-top: 1px dashed #e2e8f0; padding-top: 1rem;">
+                    <label>⚖️ Abone o Dia Inteiro por Ausência Justificada</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="ponto-justificativa" style="flex: 1;">
+                            <option value="">-- Nenhuma (Dia Trabalhado Normal) --</option>
+                            <option value="Atestado Médico">Atestado Médico</option>
+                            <option value="Folga Compensatória">Folga Compensatória</option>
+                            <option value="Férias">Férias</option>
+                            <option value="Feriado (Sem Trabalho)">Feriado (Sem Trabalho)</option>
+                            <option value="Feriado (Com Trabalho)">Feriado (Com Trabalho)</option>
+                            <option value="Ato do Presidente (Dispensa Parcial)">Ato do Presidente (Dispensa Parcial)</option>
+                            <option value="Falta (Descontar 8h do Banco)">Falta (Descontar 8h do Banco)</option>
+                        </select>
+                        <button class="btn btn-warning" id="btn-abonar">Lançar Justificativa (8h creditadas)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="resumo-container">
+                <div class="resumo-title">Resumo do Dia Selecionado</div>
+                <div class="resumo-grid">
+                    <div class="resumo-item">
+                        <span class="resumo-label">Horas Trabalhadas</span>
+                        <span class="resumo-value" id="txt-dia-trabalhado" style="color: #10b981;">00:00</span>
+                    </div>
+                    <div class="resumo-item">
+                        <span class="resumo-label" id="label-dia-saldo">Faltam para 8 horas</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span class="resumo-value" id="txt-dia-saldo" style="color: #f59e0b;">08:00</span>
+                            <button class="btn-mini-banco" id="btn-enviar-banco" style="display: none;">📥 Enviar</button>
+                        </div>
+                    </div>
+                    <div class="resumo-item">
+                        <span class="resumo-label">Status do Dia</span>
+                        <span class="status-ponto" id="txt-ponto-status" style="color: #dc2626;">PONTO INCOMPLETO</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="barra-progresso"></div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo / Descrição</th>
+                            <th>Horário / Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="resumo-container" style="background: #ffffff;">
+                <div class="resumo-title" id="titulo-resumo-mensal">Resumo Mensal</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+                    <div style="display: flex; gap: 2.5rem; flex-wrap: wrap;">
+                        <div class="resumo-item">
+                            <span class="resumo-label">Dias Trabalhados (Mês)</span>
+                            <span class="resumo-value" id="txt-mes-dias">0 dias</span>
+                        </div>
+                        <div class="resumo-item">
+                            <span class="resumo-label">Saldo do Mês Atual</span>
+                            <span class="resumo-value" id="txt-mes-saldo">00:00</span>
+                        </div>
+                        <div class="resumo-item">
+                            <span class="resumo-label">Saldo Geral Acumulado</span>
+                            <span class="resumo-value" id="txt-geral-acumulado">00:00</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 0.5rem; border-left: 1px dashed #cbd5e1; padding-left: 1.5rem;">
+                        <div class="form-group">
+                            <label>Horas Anteriores (+/-)</label>
+                            <div style="display: flex; gap: 0.25rem;">
+                                <select id="sinal-anterior" autocomplete="off" name="sinal_anterior_clean" class="input-compacto" style="width: 50px;">
+                                    <option value="+">+</option>
+                                    <option value="-">-</option>
+                                </select>
+                                <input type="text" id="valor-anterior" value="00:00" placeholder="00:00" autocomplete="new-password" inputmode="numeric" name="valor_anterior_clean" class="input-compacto" style="width: 70px; text-align: center;">
+                                <button class="btn btn-primary" id="btn-fixar-anterior" style="height: 35px; font-size: 0.8rem; padding: 0 0.8rem;">Fixar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="painel-estatisticas-box">
+                <div class="resumo-title" style="margin-bottom: 0.75rem;">📊 Indicadores e Estatísticas do Mês Atual</div>
+                <div class="grid-estatisticas">
+                    <div class="card-estatistica" style="border-left: 4px solid #2563eb;">
+                        <span class="card-estatistica-title">⏱️ Horas Extras Integradas</span>
+                        <span class="card-estatistica-value" id="stat-horas-extras" style="color: #2563eb;">00:00</span>
+                    </div>
+                    <div class="card-estatistica" style="border-left: 4px solid #dc2626;">
+                        <span class="card-estatistica-title">📉 Horas Devedoras</span>
+                        <span class="card-estatistica-value" id="stat-horas-devedoras" style="color: #dc2626;">00:00</span>
+                    </div>
+                    <div class="card-estatistica" style="border-left: 4px solid #475569;">
+						<span class="card-estatistica-title">💼 Total de Horas Efetivas (Mês)</span>
+						<span class="card-estatistica-value" id="stat-horas-efetivas" style="color: #475569;">00:00</span>
+					</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
+                <button class="btn btn-danger-outline" id="btn-limpar-dia">📅 Limpar Dados do Dia</button>
+                <button class="btn btn-danger-outline" id="btn-limpar-tudo">🗑️ Limpar Todo o Histórico</button>
+            </div>
+
+            <div class="central-backup-box">
+                <div class="backup-header-text">
+                    📦 <strong>Central de Cópia de Segurança:</strong> Exportar gera um arquivo contendo todo o seu histórico. Se você precisar formatar o computador ou quiser abrir o sistema no celular, basta importar o arquivo e recuperar tudo.
+                </div>
+                <div class="backup-row-actions">
+                    <button class="btn btn-success" onclick="exportarBackupJSON()">📥 Baixar Arquivo de Backup</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('importInput').click()">📤 Importar Histórico (JSON)</button>
+                    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="importarBackupJSON(event)">
+                </div>
+            </div>
+
+            <footer>
+                Copyright © 2026 MVF5 Systems - Soluções em TI
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-observacao">
+        <div class="modal-box">
+            <div class="modal-title" id="modal-obs-titulo">Observação do Registro</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <span class="modal-label">Texto da Observação / Justificativa:</span>
+                <textarea id="modal-obs-texto" rows="4" placeholder="Ex: Cheguei mais tarde porque meu carro estragou..."></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" style="height: 38px;" id="btn-fechar-modal">Fechar</button>
+                <button class="btn btn-success" style="height: 38px;" id="btn-salvar-modal">Salvar Observação</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const KEY_CONFIG_PREFIX = 'ponto_inteligente_config_'; // Ajustado dinamicamente por usuário
+        const KEY_AUTH = 'ponto_inteligente_auth'; 
+        const KEY_SESSION = 'ponto_inteligente_session'; 
+
+        let configAnterior = { sinal: "+", valor: "00:00" };
+
+        let listaRegistros = [];
+        let extrasAprovadas = {};
+        let idRegistroModalAtual = null;
+
+        const JORNADA_DIARIA = 480; 
+
+        const inputData = document.getElementById('ponto-data');
+        const inputTipo = document.getElementById('ponto-tipo');
+        const inputHora = document.getElementById('ponto-hora');
+        const tabelaCorpo = document.getElementById('tabela-corpo');
+
+        let db;
+        const dbBaseName = "PontoInteligenteDB";
+        const dbVersion = 2;
+
+        // --- SISTEMA DE AUTENTICAÇÃO ---
+        document.getElementById('ir-para-cadastro').addEventListener('click', () => {
+            document.getElementById('wrapper-login').style.display = 'none';
+            document.getElementById('wrapper-cadastro').style.display = 'block';
+        });
+
+        document.getElementById('ir-para-login').addEventListener('click', () => {
+            document.getElementById('wrapper-cadastro').style.display = 'none';
+            document.getElementById('wrapper-login').style.display = 'block';
+        });
+
+        document.getElementById('btn-executar-cadastro').addEventListener('click', () => {
+            const user = document.getElementById('cadastro-usuario').value.trim();
+            const senha = document.getElementById('cadastro-senha').value.trim();
+
+            if(!user || !senha) return alert("Preencha todos os campos do cadastro!");
+
+            let contasExistentes = JSON.parse(localStorage.getItem(KEY_AUTH)) || {};
+            if(contasExistentes[user.toLowerCase()]) return alert("Este usuário já existe!");
+
+            contasExistentes[user.toLowerCase()] = { usuario: user, senha: senha };
+            localStorage.setItem(KEY_AUTH, JSON.stringify(contasExistentes));
+            localStorage.setItem(KEY_SESSION, user);
+            
+            alert("Conta criada com sucesso!");
+            verificarSessao();
+        });
+
+        document.getElementById('btn-executar-login').addEventListener('click', () => {
+            const user = document.getElementById('login-usuario').value.trim();
+            const senha = document.getElementById('login-senha').value.trim();
+
+            if(!user || !senha) return alert("Por favor, preencha o usuário e a senha.");
+
+            let contasExistentes = JSON.parse(localStorage.getItem(KEY_AUTH)) || {};
+            const conta = contasExistentes[user.toLowerCase()];
+
+            if(conta && conta.senha === senha) {
+                localStorage.setItem(KEY_SESSION, conta.usuario);
+                verificarSessao();
+            } else {
+                alert("Usuário ou senha incorretos.");
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            localStorage.removeItem(KEY_SESSION);
+            window.location.reload();
+        });
+
+        function verificarSessao() {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION);
+            if(usuarioLogado) {
+                document.getElementById('modal-auth').style.display = 'none';
+                document.getElementById('conteudo-sistema').style.display = 'block';
+                document.getElementById('lbl-nome-usuario').innerText = usuarioLogado;
+                
+                // Carrega a configuração específica deste usuário
+                configAnterior = JSON.parse(localStorage.getItem(KEY_CONFIG_PREFIX + usuarioLogado.toLowerCase())) || { sinal: "+", valor: "00:00" };
+                document.getElementById('sinal-anterior').value = configAnterior.sinal;
+                document.getElementById('valor-anterior').value = configAnterior.valor;
+
+                // Inicializa o app e o Banco de Dados ISOLADO do usuário
+                iniciarBancoDados(function() {
+                    atualizarCamposHorarioEVisualizacao();
+                });
+            } else {
+                document.getElementById('modal-auth').style.display = 'flex';
+                document.getElementById('conteudo-sistema').style.display = 'none';
+            }
+        }
+
+        // --- FIM DO BLOCO DE AUTENTICAÇÃO ---
+
+        function iniciarBancoDados(callback) {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            // Cria um banco de dados dinâmico por usuário (Garante banco em branco no cadastro)
+            const dbNameIndividual = `${dbBaseName}_${usuarioLogado}`;
+            const request = indexedDB.open(dbNameIndividual, dbVersion);
+
+            request.onupgradeneeded = function(e) {
+                const database = e.target.result;
+                let storeRegistros;
+
+                if (!database.objectStoreNames.contains("registros")) {
+                    storeRegistros = database.createObjectStore("registros", { keyPath: "id" });
+                } else {
+                    storeRegistros = e.target.transaction.objectStore("registros");
+                }
+
+                if (!storeRegistros.indexNames.contains("data")) {
+                    storeRegistros.createIndex("data", "data", { unique: false });
+                }
+                if (!storeRegistros.indexNames.contains("tipo")) {
+                    storeRegistros.createIndex("tipo", "tipo", { unique: false });
+                }
+                if (!storeRegistros.indexNames.contains("tipoLancamento")) {
+                    storeRegistros.createIndex("tipoLancamento", "tipoLancamento", { unique: false });
+                }
+
+                if (!database.objectStoreNames.contains("extras")) {
+                    database.createObjectStore("extras", { keyPath: "data" });
+                }
+            };
+
+            request.onsuccess = function(e) {
+                db = e.target.result;
+                carregarDadosDoBanco(callback);
+            };
+
+            request.onerror = function() {
+                alert("Erro catastrófico ao tentar abrir o Banco de Dados IndexedDB.");
+            };
+        }
+
+        function carregarDadosDoBanco(callback) {
+            const transaction = db.transaction(["registros", "extras"], "readonly");
+            const storeRegistros = transaction.objectStore("registros");
+            const storeExtras = transaction.objectStore("extras");
+
+            listaRegistros = [];
+            extrasAprovadas = {};
+
+            storeRegistros.openCursor().onsuccess = function(e) {
+                const cursor = e.target.result;
+                if (cursor) {
+                    listaRegistros.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    storeExtras.openCursor().onsuccess = function(ev) {
+                        const cursorEx = ev.target.result;
+                        if (cursorEx) {
+                            extrasAprovadas[cursorEx.value.data] = cursorEx.value.aprovado;
+                            cursorEx.continue();
+                        } else {
+                            if (callback) callback();
+                        }
+                    };
+                }
+            };
+        }
+
+        function dbSalvarRegistro(registro, callback) {
+            const transaction = db.transaction(["registros"], "readwrite");
+            const store = transaction.objectStore("registros");
+            const request = store.put(registro);
+            request.onsuccess = function() {
+                if (callback) callback();
+            };
+        }
+
+        function dbDeletarRegistro(id, callback) {
+            const transaction = db.transaction(["registros"], "readwrite");
+            const store = transaction.objectStore("registros");
+            const request = store.delete(id);
+            request.onsuccess = function() {
+                if (callback) callback();
+            };
+        }
+
+        function dbSalvarExtra(data, aprovado, callback) {
+            const transaction = db.transaction(["extras"], "readwrite");
+            const store = transaction.objectStore("extras");
+            const request = store.put({ data: data, aprovado: aprovado });
+            request.onsuccess = function() {
+                if (callback) callback();
+            };
+        }
+
+        function dbDeletarExtra(data, callback) {
+            const transaction = db.transaction(["extras"], "readwrite");
+            const store = transaction.objectStore("extras");
+            const request = store.delete(data);
+            request.onsuccess = function() {
+                if (callback) callback();
+            };
+        }
+
+        function dbLimparTudo(callback) {
+            const transaction = db.transaction(["registros", "extras"], "readwrite");
+            const storeReg = transaction.objectStore("registros");
+            const storeExt = transaction.objectStore("extras");
+            
+            storeReg.clear();
+            storeExt.clear();
+            
+            transaction.oncomplete = function() {
+                if (callback) callback();
+            };
+        }
+
+        window.onload = function() {
+            const hoje = new Date().toISOString().split('T')[0];
+            inputData.value = hoje;
+            inputData.max = hoje; 
+
+            definirHoraAtual();
+            verificarSessao();
+        };
+
+        function definirHoraAtual() {
+            const agora = new Date();
+            inputHora.value = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function formatarMinutos(totalMinutos) {
+            const h = Math.floor(totalMinutos / 60);
+            const m = totalMinutos % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        function converterParaMinutos(strHora) {
+            if (!strHora || !strHora.includes(':')) return 0;
+            const parts = strHora.split(':');
+            return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+        }
+
+        function validarDataFutura(dataString) {
+            const hojeStr = new Date().toISOString().split('T')[0];
+            return dataString > hojeStr;
+        }
+
+        function comprimirEConverterImagem(file, callback) {
+            if (!file) return callback(null);
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    
+                    if (img.width > MAX_WIDTH) {
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    canvas.toBlob(function(blob) {
+                        callback(blob);
+                    }, 'image/jpeg', 0.7);
+                };
+            };
+        }
+
+        document.getElementById('btn-registrar').addEventListener('click', function() {
+            const data = inputData.value;
+            const tipo = inputTipo.value;
+            const hora = inputHora.value;
+            const arquivoComprovante = document.getElementById('ponto-comprovante').files[0];
+
+            if (!data || !hora) return alert("Preencha todos os campos!");
+            if (validarDataFutura(data)) return alert("Não é permitido registrar ponto em datas futuras!");
+
+            const jaExisteAbono = listaRegistros.some(r => r.data === data && r.tipoLancamento === 'abono' && r.tipo !== 'Férias');
+            if (jaExisteAbono) return alert("Este dia já possui uma justificativa ou abono lançado que impede novas batidas.");
+
+            const jaExisteTipo = listaRegistros.some(r => r.data === data && r.tipo === tipo);
+            if (jaExisteTipo) return alert(`Já existe um registro de ${tipo} para este dia.`);
+
+            const batidasDoDia = listaRegistros.filter(r => r.data === data && r.tipoLancamento === 'ponto');
+            const temEntrada = batidasDoDia.some(r => r.tipo === "Entrada");
+            const temAlmocoSaida = batidasDoDia.some(r => r.tipo === "Almoço (Saída)");
+            const temVoltaAlmoco = batidasDoDia.some(r => r.tipo === "Volta do Almoço");
+
+            const minutesNovaBatida = converterParaMinutos(hora);
+            for (let batida of batidasDoDia) {
+                const minutesExistente = converterParaMinutos(batida.horario);
+                if (tipo === "Almoço (Saída)" && batida.tipo === "Entrada" && minutesNovaBatida <= minutesExistente) {
+                    return alert(`Erro: O horário do Almoço (${hora}) não pode ser menor ou igual ao horário de Entrada (${batida.horario})!`);
+                }
+                if (tipo === "Volta do Almoço" && batida.tipo === "Almoço (Saída)" && minutesNovaBatida <= minutesExistente) {
+                    return alert(`Erro: O horário de Volta do Almoço (${hora}) não pode ser menor ou igual ao horário de Saída para o Almoço (${batida.horario})!`);
+                }
+                if (tipo === "Saída Final") {
+                    if (batida.tipo === "Volta do Almoço" && minutesNovaBatida <= minutesExistente) {
+                        return alert(`Erro: A Saída Final (${hora}) não pode ser menor ou igual ao horário de Volta do Almoço (${batida.horario})!`);
+                    }
+                    if (!temAlmocoSaida && batida.tipo === "Entrada" && minutesNovaBatida <= minutesExistente) {
+                        return alert(`Erro: A Saída Final (${hora}) não pode ser menor ou igual ao horário de Entrada (${batida.horario})!`);
+                    }
+                }
+                if (minutesNovaBatida <= minutesExistente) {
+                    return alert(`Erro de Consistência: Você está tentando registrar um horário (${hora}) que conflita com a sequência das batidas já existentes.`);
+                }
+            }
+
+            if (tipo === "Almoço (Saída)" && !temEntrada) return alert("Erro: Não é possível registrar o Almoço (Saída) sem antes registrar uma Entrada!");
+            if (tipo === "Volta do Almoço" && (!temEntrada || !temAlmocoSaida)) return alert("Erro: Não é possível registrar a Volta do Almoço sem antes ter uma Entrada e uma Saída para o Almoço!");
+            if (tipo === "Saída Final" && !temEntrada) return alert("Erro: Não é possível registrar a Saída Final sem ter uma Entrada registrada neste dia!");
+            if (tipo === "Saída Final" && (temAlmocoSaida || temVoltaAlmoco) && (!temAlmocoSaida || !temVoltaAlmoco)) {
+                return alert("Erro: Você iniciou o fluxo de almoço. Registre a Saída e a Volta do almoço completamente antes da Saída Final!");
+            }
+
+            const btnRegistrar = document.getElementById('btn-registrar');
+            const textoOriginal = btnRegistrar.innerText;
+            btnRegistrar.disabled = true;
+            btnRegistrar.innerText = "Processando Imagem...";
+
+            comprimirEConverterImagem(arquivoComprovante, function(blobResultado) {
+                const novoReg = {
+                    id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
+                    data: data,
+                    tipo: tipo,
+                    horario: hora,
+                    tipoLancamento: 'ponto',
+                    comprovante: blobResultado,
+                    observacao: ""
+                };
+
+                dbSalvarRegistro(novoReg, function() {
+                    listaRegistros.push(novoReg);
+                    document.getElementById('ponto-comprovante').value = "";
+                    btnRegistrar.disabled = false;
+                    btnRegistrar.innerText = textoOriginal;
+                    
+                    atualizarCamposHorarioEVisualizacao();
+                    definirHoraAtual();
+                });
+            });
+        });
+
+        document.getElementById('btn-abonar').addEventListener('click', function() {
+            const data = inputData.value;
+            const motivo = document.getElementById('ponto-justificativa').value;
+
+            if (!data || !motivo) return alert("Selecione a data e o tipo de justificativa!");
+            if (validarDataFutura(data)) return alert("Não é permitido lançar justificativa em datas futuras!");
+
+            const confirmacao = confirm(`Deseja aplicar a justificativa para o dia ${data.split('-').reverse().join('/')} por motivo de "${motivo}"?`);
+            if (!confirmacao) return;
+
+            if (motivo === "Ato do Presidente (Dispensa Parcial)" || motivo === "Férias") {
+                const jaTemMesmoAbono = listaRegistros.some(r => r.data === data && r.tipoLancamento === 'abono');
+                if (jaTemMesmoAbono) return alert("Este dia já possui uma justificativa lançada.");
+
+                const novoAbono = {
+                    id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
+                    data: data,
+                    tipo: motivo,
+                    horario: motivo === "Férias" ? "Férias" : "Dispensado",
+                    tipoLancamento: 'abono',
+                    observacao: ""
+                };
+
+                dbSalvarRegistro(novoAbono, function() {
+                    listaRegistros.push(novoAbono);
+                    atualizarCamposHorarioEVisualizacao();
+                    document.getElementById('ponto-justificativa').value = "";
+                });
+            } else {
+                const batidasParaRemover = listaRegistros.filter(r => r.data === data);
+                const transaction = db.transaction(["registros", "extras"], "readwrite");
+                const storeReg = transaction.objectStore("registros");
+                const storeExt = transaction.objectStore("extras");
+
+                batidasParaRemover.forEach(r => storeReg.delete(r.id));
+                storeExt.delete(data);
+
+                transaction.oncomplete = function() {
+                    listaRegistros = listaRegistros.filter(r => r.data !== data);
+                    if (extrasAprovadas[data]) delete extrasAprovadas[data];
+
+                    const novoAbono = {
+                        id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
+                        data: data,
+                        tipo: motivo,
+                        horario: "08:00 (Abonado)",
+                        tipoLancamento: 'abono',
+                        observacao: ""
+                    };
+
+                    dbSalvarRegistro(novoAbono, function() {
+                        listaRegistros.push(novoAbono);
+                        atualizarCamposHorarioEVisualizacao();
+                        document.getElementById('ponto-justificativa').value = "";
+                    });
+                };
+            }
+        });
+
+        function deletarRegistro(id) {
+            const registro = listaRegistros.find(r => String(r.id) === String(id));
+            if (!registro) {
+                alert("Registro não encontrado.");
+                return;
+            }
+
+            const confirmar = confirm(`Deseja realmente excluir o registro de ${registro.tipo}?\n\nEsta ação não poderá ser desfeita.`);
+            if (!confirmar) return;
+
+            dbDeletarRegistro(registro.id, function() {
+                listaRegistros = listaRegistros.filter(r => String(r.id) !== String(id));
+                
+                if(registro.tipo === "Férias") {
+                    dbDeletarExtra(registro.data, function() {
+                        if(extrasAprovadas[registro.data]) delete extrasAprovadas[registro.data];
+                        atualizarCamposHorarioEVisualizacao();
+                    });
+                } else {
+                    atualizarCamposHorarioEVisualizacao();
+                }
+                alert("Registro excluído com sucesso.");
+            });
+        }
+
+        function abrirModalObservacao(id) {
+            idRegistroModalAtual = id;
+            const registro = listaRegistros.find(r => String(r.id) === String(id));
+            if (registro) {
+                document.getElementById('modal-obs-titulo').innerText = `Observação — ${registro.tipo}`;
+                document.getElementById('modal-obs-texto').value = registro.observacao || "";
+                document.getElementById('modal-observacao').style.display = "flex";
+            }
+        }
+
+        document.getElementById('btn-fechar-modal').addEventListener('click', function() {
+            document.getElementById('modal-observacao').style.display = "none";
+            idRegistroModalAtual = null;
+        });
+
+        document.getElementById('btn-salvar-modal').addEventListener('click', function() {
+            if (idRegistroModalAtual) {
+                const registro = listaRegistros.find(r => r.id === idRegistroModalAtual);
+                if (registro) {
+                    registro.observacao = document.getElementById('modal-obs-texto').value;
+                    dbSalvarRegistro(registro, function() {
+                        document.getElementById('modal-observacao').style.display = "none";
+                        idRegistroModalAtual = null;
+                        atualizarCamposHorarioEVisualizacao();
+                    });
+                }
+            }
+        });
+
+        document.getElementById('btn-limpar-dia').addEventListener('click', function() {
+            const data = inputData.value;
+            if (!data) return;
+            if (confirm(`Remover todos os registros cadastrados no dia ${data.split('-').reverse().join('/')}?`)) {
+                const batidasParaRemover = listaRegistros.filter(r => r.data === data);
+                const transaction = db.transaction(["registros", "extras"], "readwrite");
+                const storeReg = transaction.objectStore("registros");
+                const storeExt = transaction.objectStore("extras");
+
+                batidasParaRemover.forEach(r => storeReg.delete(r.id));
+                storeExt.delete(data);
+
+                transaction.oncomplete = function() {
+                    listaRegistros = listaRegistros.filter(r => r.data !== data);
+                    if (extrasAprovadas[data]) delete extrasAprovadas[data];
+                    atualizarCamposHorarioEVisualizacao();
+                };
+            }
+        });
+
+        document.getElementById('btn-limpar-tudo').addEventListener('click', function() {
+            if (confirm("🚨 ATENÇÃO: Tem certeza que deseja apagar permanentemente todo o histórico do banco de dados local IndexedDB deste usuário?")) {
+                dbLimparTudo(function() {
+                    const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+                    listaRegistros = [];
+                    extrasAprovadas = {};
+                    configAnterior = { sinal: "+", valor: "00:00" };
+                    localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
+                    atualizarCamposHorarioEVisualizacao();
+                    alert("Banco de dados do usuário completamente zerado!");
+                });
+            }
+        });
+
+        document.getElementById('btn-fixar-anterior').addEventListener('click', function() {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            configAnterior.sinal = document.getElementById('sinal-anterior').value;
+            configAnterior.valor = document.getElementById('valor-anterior').value;
+            localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
+            atualizarCamposHorarioEVisualizacao();
+            alert("Horas anteriores salvas com sucesso!");
+        });
+
+        document.getElementById('btn-enviar-banco').addEventListener('click', function() {
+            const data = inputData.value;
+            const resumo = calcularTurnosDoDia(data);
+            
+            if (resumo.minutosTrabalhados > 0) {
+                dbSalvarExtra(data, true, function() {
+                    extrasAprovadas[data] = true;
+                    alert("Saldo positivo integrado ao Banco de Horas com sucesso!");
+                    atualizarCamposHorarioEVisualizacao();
+                });
+            }
+        });
+
+        function calcularTurnosDoDia(dataAlvo) {
+            const doDia = listaRegistros.filter(r => r.data === dataAlvo);
+            if (doDia.length === 0) return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 0, temSaidaFinal: false, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false };
+
+            const temFaltaDesconto = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Falta (Descontar 8h do Banco)');
+            const temAtoPresidente = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Ato do Presidente (Dispensa Parcial)');
+            const temFerias = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Férias');
+            const temAbonoNormal = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo !== 'Ato do Presidente (Dispensa Parcial)' && r.tipo !== 'Falta (Descontar 8h do Banco)' && r.tipo !== 'Férias');
+
+            if (temFaltaDesconto) {
+                return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: true, isFerias: false };
+            }
+
+            if (temAbonoNormal) {
+                return { minutosTrabalhados: JORNADA_DIARIA, continuo: false, previsaoSaida: null, isJustificado: true, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false };
+            }
+
+            const batidasPonto = doDia.filter(r => r.tipoLancamento === 'ponto');
+            const map = {};
+            batidasPonto.forEach(r => { map[r.tipo] = converterParaMinutos(r.horario); });
+
+            let minutesTrabalhados = 0;
+            let continuo = false;
+            let previsaoSaida = null;
+
+            const hojeStr = new Date().toISOString().split('T')[0];
+            const agora = new Date();
+            const minutosAgora = (agora.getHours() * 60) + agora.getMinutes();
+
+            const temEntrada = map["Entrada"] !== undefined;
+            const temAlmocoSaida = map["Almoço (Saída)"] !== undefined;
+            const temVoltaAlmoco = map["Volta do Almoço"] !== undefined;
+            const temSaidaFinal = map["Saída Final"] !== undefined;
+
+            const metaDoDia = temFerias ? 0 : JORNADA_DIARIA;
+
+            if (temEntrada && temSaidaFinal && !temAlmocoSaida && !temVoltaAlmoco) {
+                minutesTrabalhados = map["Saída Final"] - map["Entrada"];
+            } else {
+                if (temEntrada) {
+                    if (temAlmocoSaida) {
+                        minutesTrabalhados += (map["Almoço (Saída)"] - map["Entrada"]);
+                    } else {
+                        if (dataAlvo === hojeStr) {
+                            minutesTrabalhados += Math.max(0, minutosAgora - map["Entrada"]);
+                        }
+                        continuo = true;
+                        previsaoSaida = formatarMinutos(map["Entrada"] + metaDoDia);
+                    }
+                }
+
+                if (temVoltaAlmoco) {
+                    if (temSaidaFinal) {
+                        minutesTrabalhados += (map["Saída Final"] - map["Volta do Almoço"]);
+                    } else {
+                        if (dataAlvo === hojeStr) {
+                            minutesTrabalhados += Math.max(0, minutosAgora - map["Volta do Almoço"]);
+                        }
+                        continuo = true;
+                        const feitos = temAlmocoSaida ? (map["Almoço (Saída)"] - map["Entrada"]) : 0;
+                        const restantes = metaDoDia - feitos;
+                        previsaoSaida = formatarMinutos(map["Volta do Almoço"] + Math.max(0, restantes));
+                    }
+                }
+            }
+
+            if (temAtoPresidente) {
+                return { 
+                    minutosTrabalhados: JORNADA_DIARIA, 
+                    continuo: false, 
+                    previsaoSaida: null, 
+                    isJustificado: true, 
+                    totalBatidas: doDia.length,
+                    temSaidaFinal: true,
+                    isAtoPresidente: true,
+                    minutosReaisTrabalhados: minutesTrabalhados,
+                    isFerias: false
+                };
+            }
+
+            if (temFerias) {
+                return {
+                    minutosTrabalhados: minutesTrabalhados,
+                    continuo: continuo,
+                    previsaoSaida: previsaoSaida,
+                    isJustificado: minutesTrabalhados === 0, 
+                    totalBatidas: doDia.length,
+                    temSaidaFinal: temSaidaFinal,
+                    isAtoPresidente: false,
+                    isFaltaDesconto: false,
+                    isFerias: true
+                };
+            }
+
+            return { 
+                minutosTrabalhados: minutesTrabalhados, 
+                continuo, 
+                previsaoSaida, 
+                isJustificado: false, 
+                totalBatidas: doDia.length,
+                temSaidaFinal: temSaidaFinal,
+                isAtoPresidente: false,
+                isFaltaDesconto: false,
+                isFerias: false
+            };
+        }
+
+        function visualizarComprovante(id) {
+            const registro = listaRegistros.find(r => String(r.id) === String(id));
+            if (!registro || !registro.comprovante) return alert("Mídia não encontrada.");
+
+            if (registro.comprovante instanceof Blob) {
+                const urlCriada = URL.createObjectURL(registro.comprovante);
+                const novaJanela = window.open();
+                if (!novaJanela) return alert("Por favor, permita pop-ups para visualizar o anexo.");
+                
+                novaJanela.document.write(`
+                    <html>
+                    <head><title>Comprovante de Ponto - MVF5 Systems</title></head>
+                    <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                        <img src="${urlCriada}" style="max-width:95%; max-height:95vh; box-shadow: 0 4px 25px rgba(0,0,0,0.6); border-radius:8px;" />
+                    </body>
+                    </html>
+                `);
+                novaJanela.onload = function() {
+                    URL.revokeObjectURL(urlCriada);
+                };
+            } else if (typeof registro.comprovante === 'string') {
+                const novaJanela = window.open();
+                novaJanela.document.write(`
+                    <html>
+                    <head><title>Comprovante de Ponto - MVF5 Systems</title></head>
+                    <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                        <img src="${registro.comprovante}" style="max-width:95%; max-height:95vh; box-shadow: 0 4px 25px rgba(0,0,0,0.6); border-radius:8px;" />
+                    </body>
+                    </html>
+                `);
+            }
+        }
+
+        function atualizarCamposHorarioEVisualizacao() {
+            const dataSelecionada = inputData.value;
+
+            tabelaCorpo.innerHTML = "";
+            const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada).sort((a,b) => {
+                if(a.tipoLancamento === 'abono') return -1;
+                return converterParaMinutos(a.horario) - converterParaMinutos(b.horario);
+            });
+
+            registrosDoDia.forEach(r => {
+                let clsBadge = "badge-entrada";
+                if (r.tipo.includes("Almoço")) clsBadge = "badge-almoco";
+                if (r.tipo.includes("Volta")) clsBadge = "badge-volta";
+                if (r.tipo.includes("Saída Final")) clsBadge = "badge-saida";
+                if (r.tipoLancamento === 'abono') clsBadge = "badge-abono";
+
+                const botaoComprovante = r.comprovante 
+                    ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size:12px; height: 28px; background: #0284c7;" onclick="visualizarComprovante('${r.id}')">👁️ Ver</button>`
+                    : '';
+
+                const temObsText = r.observacao ? ' 💬' : '';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.data.split('-').reverse().join('/')}</td>
+                    <td><span class="badge ${clsBadge}">${r.tipo}${temObsText}</span></td>
+                    <td><strong>${r.horario}</strong></td>
+                    <td>
+                        <div style="display: flex; gap: 0.25rem;">
+                            ${botaoComprovante}
+                            <button class="btn btn-primary" style="padding: 4px 10px; font-size:12px; height: 28px; background: #1e293b;" onclick="abrirModalObservacao('${r.id}')">📝 Obs.</button>
+                            <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size:12px; height: 28px;" onclick="deletarRegistro('${r.id}')">🗑️ Deletar</button>
+                        </div>
+                    </td>
+                `;
+                tabelaCorpo.appendChild(tr);
+            });
+
+            const resumoDia = calcularTurnosDoDia(dataSelecionada);
+            
+            if (resumoDia.isAtoPresidente) {
+                document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(JORNADA_DIARIA);
+            } else {
+                document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(resumoDia.minutosTrabalhados);
+            }
+
+            const banner = document.getElementById('banner-trabalho-continuous');
+            if (resumoDia.continuo && resumoDia.previsaoSaida) {
+                banner.style.display = "flex";
+                if (resumoDia.isFerias) {
+                    document.getElementById('texto-banner-trabalho').innerText = `Trabalhando nas Férias de forma contínua. Todo o tempo de ${formatarMinutos(resumoDia.minutosTrabalhados)} irá para o Banco de Horas.`;
+                } else {
+                    document.getElementById('texto-banner-trabalho').innerText = `Trabalhando direto de forma contínua, sua saída para dar 8h será às ${resumoDia.previsaoSaida}.`;
+                }
+            } else {
+                banner.style.display = "none";
+            }
+
+            const saldoDia = resumoDia.isFerias ? resumoDia.minutosTrabalhados : (resumoDia.minutosTrabalhados - JORNADA_DIARIA);
+            
+            const labelDiaSaldo = document.getElementById('label-dia-saldo');
+            const txtDiaSaldo = document.getElementById('txt-dia-saldo');
+            const txtPontoStatus = document.getElementById('txt-ponto-status');
+            const btnEnviarBanco = document.getElementById('btn-enviar-banco');
+            const barraProgresso = document.getElementById('barra-progresso');
+
+            if (resumoDia.totalBatidas === 0) {
+                labelDiaSaldo.innerText = "Saldo devedor do dia";
+                txtDiaSaldo.innerText = "08:00";
+                txtDiaSaldo.style.color = "#dc2626";
+                txtPontoStatus.innerText = "PONTO INCOMPLETO";
+                txtPontoStatus.style.color = "#dc2626";
+                barraProgresso.style.width = "0%";
+                btnEnviarBanco.style.display = "none";
+            } else if (resumoDia.isFaltaDesconto) { 
+                labelDiaSaldo.innerText = "Saldo devedor (Banco)";
+                txtDiaSaldo.innerText = "-08:00";
+                txtDiaSaldo.style.color = "#dc2626";
+                txtPontoStatus.innerText = "FALTA LANÇADA";
+                txtPontoStatus.style.color = "#dc2626";
+                barraProgresso.style.width = "100%";
+                btnEnviarBanco.style.display = "none";
+            } else if (resumoDia.isJustificado && resumoDia.minutosTrabalhados === 0) {
+                labelDiaSaldo.innerText = "Saldo do dia";
+                txtDiaSaldo.innerText = resumoDia.isAtoPresidente ? "00:00 (Disp. Ato)" : "00:00 (Férias / Justificado)";
+                txtDiaSaldo.style.color = "#64748b";
+                txtPontoStatus.innerText = "PONTO COMPLETO";
+                txtPontoStatus.style.color = "#10b981";
+                barraProgresso.style.width = "100%";
+                btnEnviarBanco.style.display = "none";
+            } else if (resumoDia.isFerias && !resumoDia.temSaidaFinal) {
+                labelDiaSaldo.innerText = "Trabalhado nas Férias (Acumulando)";
+                txtDiaSaldo.innerText = `+${formatarMinutos(saldoDia)}`;
+                txtDiaSaldo.style.color = "#2563eb";
+                txtPontoStatus.innerText = "FÉRIAS EM TRABALHO";
+                txtPontoStatus.style.color = "#f59e0b";
+                barraProgresso.style.width = "50%";
+                
+                btnEnviarBanco.style.display = "inline-flex";
+                if (extrasAprovadas[dataSelecionada]) {
+                    btnEnviarBanco.disabled = true;
+                    btnEnviarBanco.style.background = "#cbd5e1";
+                    btnEnviarBanco.innerText = "✓ Enviado";
+                } else {
+                    btnEnviarBanco.disabled = false;
+                    btnEnviarBanco.style.background = "#10b981";
+                    btnEnviarBanco.innerText = "📥 Enviar";
+                }
+            } else if (!resumoDia.temSaidaFinal) {
+                labelDiaSaldo.innerText = saldoDia < 0 ? "Faltam para 8 horas" : "Saldo parcial positivo";
+                txtDiaSaldo.innerText = formatarMinutos(Math.abs(saldoDia));
+                txtDiaSaldo.style.color = saldoDia < 0 ? "#f59e0b" : "#2563eb";
+                txtPontoStatus.innerText = "PONTO INCOMPLETO";
+                txtPontoStatus.style.color = "#dc2626";
+                
+                let percentual = (resumoDia.minutosTrabalhados / JORNADA_DIARIA) * 100;
+                barraProgresso.style.width = `${Math.min(100, percentual)}%`;
+                btnEnviarBanco.style.display = "none";
+            } else {
+                txtPontoStatus.innerText = "PONTO COMPLETO";
+                txtPontoStatus.style.color = "#10b981";
+                barraProgresso.style.width = "100%";
+
+                if (saldoDia < 0) {
+                    labelDiaSaldo.innerText = "Saldo devedor do dia";
+                    txtDiaSaldo.innerText = `-${formatarMinutos(Math.abs(saldoDia))}`;
+                    txtDiaSaldo.style.color = "#dc2626";
+                    btnEnviarBanco.style.display = "none";
+                } else {
+                    labelDiaSaldo.innerText = resumoDia.isFerias ? "Total Extra das Férias" : "Saldo positivo do dia";
+                    txtDiaSaldo.innerText = `+${formatarMinutos(saldoDia)}`;
+                    txtDiaSaldo.style.color = "#2563eb";
+                    btnEnviarBanco.style.display = "inline-flex";
+
+                    if (extrasAprovadas[dataSelecionada]) {
+                        btnEnviarBanco.disabled = true;
+                        btnEnviarBanco.style.background = "#cbd5e1";
+                        btnEnviarBanco.innerText = "✓ Enviado";
+                    } else {
+                        btnEnviarBanco.disabled = false;
+                        btnEnviarBanco.style.background = "#10b981";
+                        btnEnviarBanco.innerText = "📥 Enviar";
+                    }
+                }
+            }
+
+            const apenasBatidas = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
+            if (!apenasBatidas.some(r => r.tipo === "Entrada")) inputTipo.value = "Entrada";
+            else if (!apenasBatidas.some(r => r.tipo === "Almoço (Saída)")) inputTipo.value = "Almoço (Saída)";
+            else if (!apenasBatidas.some(r => r.tipo === "Volta do Almoço")) inputTipo.value = "Volta do Almoço";
+            else if (!apenasBatidas.some(r => r.tipo === "Saída Final")) inputTipo.value = "Saída Final";
+            else inputTipo.value = "Entrada";
+
+            if (dataSelecionada) {
+                const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const parteMes = parseInt(dataSelecionada.split('-')[1], 10) - 1;
+                const parteAno = dataSelecionada.split('-')[0];
+                document.getElementById('titulo-resumo-mensal').innerText = `Resumo Mensal — ${nomesMeses[parteMes]} de ${parteAno}`;
+            }
+
+            const todasAsDatasComRegistros = [...new Set(listaRegistros.map(r => r.data))];
+            const mesCorrenteFiltro = dataSelecionada.substring(0, 7);
+            const diasContadosNoMes = todasAsDatasComRegistros.filter(d => d.startsWith(mesCorrenteFiltro)).length;
+            document.getElementById('txt-mes-dias').innerText = `${diasContadosNoMes} ${diasContadosNoMes === 1 ? 'dia' : 'dias'}`;
+
+            let saldoMesAtualMinutos = 0;
+            let totalLiquidoHistoricoMinutos = 0;
+            let acumHorasExtrasMes = 0;
+            let acumHorasDevedorasMes = 0;
+            let acumDiasAbonadosMes = 0;
+			let acumHorasEfetivasMes = 0; // Nova variável para acumular o trabalho real
+
+            todasAsDatasComRegistros.forEach((d) => {
+                const res = calcularTurnosDoDia(d);
+                const totalDoDia = res.minutosTrabalhados;
+                
+                const liquidoDia = res.isFerias ? totalDoDia : (totalDoDia - JORNADA_DIARIA);
+
+                let realComputadoGeral = 0;
+                let realComputadoMes = 0;
+                
+                if (res.isFaltaDesconto) { 
+                    realComputadoGeral = -JORNADA_DIARIA;
+                    if (d.startsWith(mesCorrenteFiltro)) {
+                        realComputadoMes = -JORNADA_DIARIA;
+                        acumHorasDevedorasMes += JORNADA_DIARIA;
+                    }
+                } else if (res.isJustificado && res.minutosTrabalhados === 0) { 
+                    // Dias puramente justificados/abonados sem trabalho não somam horas efetivas
+                    realComputadoGeral = 0;
+                    realComputadoMes = 0;
+                } else {
+						// Se o usuário trabalhou (parcial ou totalmente), acumulamos no indicador mensal
+                    if (d.startsWith(mesCorrenteFiltro)) {
+                        // Se for Ato do Presidente, adiciona as horas reais trabalhadas guardadas na propriedade correspondente
+                        acumHorasEfetivasMes += res.isAtoPresidente ? (res.minutosReaisTrabalhados || 0) : totalDoDia;
+                    }
+                    if (!res.temSaidaFinal && !res.isFerias) return; 
+
+                    if (liquidoDia < 0) {
+                        realComputadoGeral = liquidoDia;
+                        if (d.startsWith(mesCorrenteFiltro)) {
+                            realComputadoMes = liquidoDia;
+                            acumHorasDevedorasMes += Math.abs(liquidoDia);
+                        }
+                    } else if (liquidoDia > 0) {
+                        if (extrasAprovadas[d] === true) {
+                            realComputadoGeral = liquidoDia;
+                            if (d.startsWith(mesCorrenteFiltro)) {
+                                realComputadoMes = liquidoDia;
+                                acumHorasExtrasMes += liquidoDia;
+                            }
+                        }
+                    }
+                }
+
+                totalLiquidoHistoricoMinutos += realComputadoGeral;
+                if (d.startsWith(mesCorrenteFiltro)) saldoMesAtualMinutos += realComputadoMes;
+            });
+
+            let minutesIniciaisAnteriores = converterParaMinutos(configAnterior.valor);
+            if (configAnterior.sinal === "-") minutosIniciaisAnteriores = -minutosIniciaisAnteriores;
+
+            let acumuladorGeralMinutos = totalLiquidoHistoricoMinutos + minutesIniciaisAnteriores;
+
+            renderizarEstiloSaldo(document.getElementById('txt-mes-saldo'), saldoMesAtualMinutos);
+            renderizarEstiloSaldo(document.getElementById('txt-geral-acumulado'), acumuladorGeralMinutos);
+
+            document.getElementById('stat-horas-extras').innerText = formatarMinutos(acumHorasExtrasMes);
+            document.getElementById('stat-horas-devedoras').innerText = formatarMinutos(acumHorasDevedorasMes);
+            document.getElementById('stat-horas-efetivas').innerText = formatarMinutos(acumHorasEfetivasMes); // Atualiza o novo card
+        }
+
+        function renderizarEstiloSaldo(elemento, minutes) {
+            const valorAbsoluto = formatarMinutos(Math.abs(minutes));
+            if (minutes > 0) {
+                elemento.innerText = `+${valorAbsoluto}`; elemento.style.color = "#2563eb"; 
+            } else if (minutes < 0) {
+                elemento.innerText = `-${valorAbsoluto}`; elemento.style.color = "#dc2626"; 
+            } else {
+                elemento.innerText = "00:00"; elemento.style.color = "#64748b"; 
+            }
+        }
+
+        inputData.addEventListener('change', function() {
+            atualizarCamposHorarioEVisualizacao();
+        });
+
+        function blobParaBase64(blob) {
+            return new Promise((resolve) => {
+                if (!blob || !(blob instanceof Blob)) return resolve(null);
+                const leitor = new FileReader();
+                leitor.onloadend = () => resolve(leitor.result);
+                leitor.readAsDataURL(blob);
+            });
+        }
+
+        function base64ParaBlob(base64Data) {
+            if (!base64Data) return null;
+            try {
+                const partes = base64Data.split(',');
+                const byteString = atob(partes[1]);
+                const mimeString = partes[0].split(':')[1].split(';')[0];
+                
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([ab], { type: mimeString });
+            } catch (e) {
+                console.error("Erro na conversão do backup:", e);
+                return null;
+            }
+        }
+
+        async function exportarBackupJSON() {
+            if (listaRegistros.length === 0) return alert("⚠️ Não existem registros carregados para exportação.");
+            
+            const btn = document.querySelector("button[onclick='exportarBackupJSON()']");
+            const textoOriginal = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "⏳ Convertendo arquivos...";
+
+            try {
+                const payloadProcessado = [];
+                for(const r of listaRegistros) {
+                    const copiaItem = { ...r };
+                    if (copiaItem.comprovante && copiaItem.comprovante instanceof Blob) {
+                        copiaItem.comprovante = await blobParaBase64(copiaItem.comprovante);
+                        copiaItem.isBlob = true;
+                    }
+                    payloadProcessado.push(copiaItem);
+                }
+
+                const backupCompleto = {
+                    sistema: "MVF5 Systems - Registro & Cálculo de Ponto (IndexedDB)",
+                    exportadoEm: new Date().toISOString(),
+                    config_anteriores: configAnterior,
+                    extras_aprovadas: extrasAprovadas,
+                    payload: payloadProcessado
+                };
+
+                const blob = new Blob([JSON.stringify(backupCompleto, null, 2)], { type: "application/json" });
+                const link = document.createElement("a");
+                link.download = `backup_ponto_mvf5_${new Date().toISOString().split('T')[0]}.json`;
+                link.href = window.URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                alert("❌ Erro ao exportar os arquivos de comprovante.");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = textoOriginal;
+            }
+        }
+
+        function importarBackupJSON(evento) {
+            const arquivo = evento.target.files[0];
+            if (!arquivo) return;
+            const leitor = new FileReader();
+            leitor.onload = function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    if (!dados.payload) throw new Error();
+                    if (confirm("⚠️ Deseja prosseguir? Isso substituirá todo o histórico atual do banco de dados local IndexedDB pelos dados do arquivo.")) {
+                        
+                        dbLimparTudo(function() {
+                            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+                            if (dados.config_anteriores) {
+                                configAnterior = dados.config_anteriores;
+                                localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
+                            }
+
+                            const transaction = db.transaction(["registros", "extras"], "readwrite");
+                            const storeReg = transaction.objectStore("registros");
+                            const storeExt = transaction.objectStore("extras");
+
+                            listaRegistros = dados.payload.map(r => {
+                                const reg = { ...r };
+                                if (reg.isBlob && typeof reg.comprovante === 'string') {
+                                    reg.comprovante = base64ParaBlob(reg.comprovante);
+                                    delete reg.isBlob;
+                                }
+                                storeReg.put(reg);
+                                return reg;
+                            });
+
+                            if (dados.extras_aprovadas) {
+                                extrasAprovadas = dados.extras_aprovadas;
+                                Object.keys(extrasAprovadas).forEach(k => {
+                                    storeExt.put({ data: k, aprovado: extrasAprovadas[k] });
+                                });
+                            }
+
+                            transaction.oncomplete = function() {
+                                window.location.reload();
+                            };
+                        });
+                    }
+                } catch(err) {
+                    alert("❌ Falha na leitura! O arquivo enviado é inválido ou está corrompido.");
+                }
+            };
+            leitor.readAsText(arquivo);
+        }
+    </script>
+</body>
+</html>
