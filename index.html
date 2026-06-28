@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Ponto Inteligente</title>
+    <title>Controle de Ponto Inteligente (Supabase Cloud)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -117,7 +118,7 @@
             height: 35px !important;
             padding: 4px 8px !important;
             font-size: 0.85rem !important;
-            }
+        }
 
         .btn {
             padding: 0.6rem 1.2rem;
@@ -188,23 +189,9 @@
             align-items: flex-start;
         }
 
-        .resumo-item { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 0.25rem;
-        }
-        
-        .resumo-label { 
-            font-size: 0.75rem; 
-            color: #64748b; 
-            font-weight: 600;
-        }
-        
-        .resumo-value { 
-            font-size: 1.4rem; 
-            font-weight: 700; 
-            word-wrap: break-word;
-        }
+        .resumo-item { display: flex; flex-direction: column; gap: 0.25rem; }
+        .resumo-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+        .resumo-value { font-size: 1.4rem; font-weight: 700; word-wrap: break-word; }
 
         .status-ponto {
             font-size: 1.15rem;
@@ -233,11 +220,7 @@
         .card-estatistica-title { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .card-estatistica-value { font-size: 1.3rem; font-weight: 700; color: #0f172a; }
 
-        .central-backup-box { background-color: #f0fdf4; border: 1px dashed #10b981; padding: 1.25rem; border-radius: 12px; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-        .backup-header-text { font-size: 0.85rem; color: #166534; line-height: 1.5; }
-        .backup-row-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-
-        /* Estilo Compartilhado para Modais */
+        /* Estilo para Modais */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -264,34 +247,10 @@
             gap: 1.25rem;
         }
 
-        .modal-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1e293b;
-            text-align: center;
-        }
-
-        .modal-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            margin-top: 0.5rem;
-        }
-
-        .link-alternar-auth {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #2563eb;
-            cursor: pointer;
-            text-decoration: underline;
-            margin-top: 0.5rem;
-        }
+        .modal-title { font-size: 1.3rem; font-weight: 700; color: #1e293b; text-align: center; }
+        .modal-label { font-size: 0.85rem; font-weight: 600; color: #475569; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
+        .link-alternar-auth { text-align: center; font-size: 0.85rem; color: #2563eb; cursor: pointer; text-decoration: underline; margin-top: 0.5rem; }
 
         .user-logado-header {
             display: flex;
@@ -318,7 +277,7 @@
         <div class="modal-box">
             <div id="wrapper-login">
                 <div class="modal-title">🔐 Acessar Sistema</div>
-                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Insira suas credenciais para gerenciar o ponto</p>
+                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Insira suas credenciais da nuvem</p>
                 
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                     <label>👤 Usuário</label>
@@ -335,7 +294,7 @@
 
             <div id="wrapper-cadastro" style="display: none;">
                 <div class="modal-title">📝 Criar Nova Conta</div>
-                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Defina os dados de acesso local</p>
+                <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:1rem;">Defina os dados de acesso global</p>
                 
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                     <label>👤 Definir Usuário</label>
@@ -409,7 +368,7 @@
                             <option value="Ato do Presidente (Dispensa Parcial)">Ato do Presidente (Dispensa Parcial)</option>
                             <option value="Falta (Descontar 8h do Banco)">Falta (Descontar 8h do Banco)</option>
                         </select>
-                        <button class="btn btn-warning" id="btn-abonar">Lançar Justificativa (8h creditadas)</button>
+                        <button class="btn btn-warning" id="btn-abonar">Lançar Justificativa</button>
                     </div>
                 </div>
             </div>
@@ -475,11 +434,11 @@
                         <div class="form-group">
                             <label>Horas Anteriores (+/-)</label>
                             <div style="display: flex; gap: 0.25rem;">
-                                <select id="sinal-anterior" autocomplete="off" name="sinal_anterior_clean" class="input-compacto" style="width: 50px;">
+                                <select id="sinal-anterior" class="input-compacto" style="width: 50px;">
                                     <option value="+">+</option>
                                     <option value="-">-</option>
                                 </select>
-                                <input type="text" id="valor-anterior" value="00:00" placeholder="00:00" autocomplete="new-password" inputmode="numeric" name="valor_anterior_clean" class="input-compacto" style="width: 70px; text-align: center;">
+                                <input type="text" id="valor-anterior" value="00:00" class="input-compacto" style="width: 70px; text-align: center;">
                                 <button class="btn btn-primary" id="btn-fixar-anterior" style="height: 35px; font-size: 0.8rem; padding: 0 0.8rem;">Fixar</button>
                             </div>
                         </div>
@@ -499,26 +458,19 @@
                         <span class="card-estatistica-value" id="stat-horas-devedoras" style="color: #dc2626;">00:00</span>
                     </div>
                     <div class="card-estatistica" style="border-left: 4px solid #475569;">
-						<span class="card-estatistica-title">💼 Total de Horas Efetivas (Mês)</span>
-						<span class="card-estatistica-value" id="stat-horas-efetivas" style="color: #475569;">00:00</span>
-					</div>
+                        <span class="card-estatistica-title">💼 Total de Horas Efetivas (Mês)</span>
+                        <span class="card-estatistica-value" id="stat-horas-efetivas" style="color: #475569;">00:00</span>
+                    </div>
                 </div>
             </div>
 
             <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
                 <button class="btn btn-danger-outline" id="btn-limpar-dia">📅 Limpar Dados do Dia</button>
-                <button class="btn btn-danger-outline" id="btn-limpar-tudo">🗑️ Limpar Todo o Histórico</button>
-            </div>
-
-            <div class="central-backup-box">
-                <div class="backup-header-text">
-                    📦 <strong>Central de Cópia de Segurança:</strong> Exportar gera um arquivo contendo todo o seu histórico. Se você precisar formatar o computador ou quiser abrir o sistema no celular, basta importar o arquivo e recuperar tudo.
-                </div>
-                <div class="backup-row-actions">
-                    <button class="btn btn-success" onclick="exportarBackupJSON()">📥 Baixar Arquivo de Backup</button>
-                    <button class="btn btn-primary" onclick="document.getElementById('importInput').click()">📤 Importar Histórico (JSON)</button>
-                    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="importarBackupJSON(event)">
-                </div>
+                <button class="btn btn-secondary" id="btn-exportar-json">📥 Exportar Backup (JSON)</button>
+                <label class="btn btn-secondary" style="display: inline-flex; align-items: center; margin: 0; height: 42px;">
+                    📤 Importar Backup (JSON)
+                    <input type="file" id="btn-importar-json" accept=".json" style="display: none;">
+                </label>
             </div>
 
             <footer>
@@ -530,12 +482,10 @@
     <div class="modal-overlay" id="modal-observacao">
         <div class="modal-box">
             <div class="modal-title" id="modal-obs-titulo">Observação do Registro</div>
-            
             <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-                <span class="modal-label">Texto da Observação / Justificativa:</span>
-                <textarea id="modal-obs-texto" rows="4" placeholder="Ex: Cheguei mais tarde porque meu carro estragou..."></textarea>
+                <span class="modal-label">Texto da Observação:</span>
+                <textarea id="modal-obs-texto" rows="4"></textarea>
             </div>
-
             <div class="modal-footer">
                 <button class="btn btn-secondary" style="height: 38px;" id="btn-fechar-modal">Fechar</button>
                 <button class="btn btn-success" style="height: 38px;" id="btn-salvar-modal">Salvar Observação</button>
@@ -544,16 +494,21 @@
     </div>
 
     <script>
-        const KEY_CONFIG_PREFIX = 'ponto_inteligente_config_'; // Ajustado dinamicamente por usuário
-        const KEY_AUTH = 'ponto_inteligente_auth'; 
-        const KEY_SESSION = 'ponto_inteligente_session'; 
+        // ==========================================
+        // CONFIGURAÇÕES DO SUPABASE (PREENCHA AQUI)
+        // ==========================================
+        const SUPABASE_URL = 'https://lwyasbxiznppnlebvryo.supabase.co';
+		const SUPABASE_KEY = 'sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS';
+		
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const KEY_CONFIG_PREFIX = 'ponto_supabase_config_'; 
+        const KEY_SESSION = 'ponto_supabase_session'; 
 
         let configAnterior = { sinal: "+", valor: "00:00" };
-
         let listaRegistros = [];
         let extrasAprovadas = {};
         let idRegistroModalAtual = null;
-
         const JORNADA_DIARIA = 480; 
 
         const inputData = document.getElementById('ponto-data');
@@ -561,11 +516,7 @@
         const inputHora = document.getElementById('ponto-hora');
         const tabelaCorpo = document.getElementById('tabela-corpo');
 
-        let db;
-        const dbBaseName = "PontoInteligenteDB";
-        const dbVersion = 2;
-
-        // --- SISTEMA DE AUTENTICAÇÃO ---
+        // --- AUTH SISTEMA (AGORA COM SUPABASE) ---
         document.getElementById('ir-para-cadastro').addEventListener('click', () => {
             document.getElementById('wrapper-login').style.display = 'none';
             document.getElementById('wrapper-cadastro').style.display = 'block';
@@ -576,37 +527,34 @@
             document.getElementById('wrapper-login').style.display = 'block';
         });
 
-        document.getElementById('btn-executar-cadastro').addEventListener('click', () => {
+        document.getElementById('btn-executar-cadastro').addEventListener('click', async () => {
             const user = document.getElementById('cadastro-usuario').value.trim();
             const senha = document.getElementById('cadastro-senha').value.trim();
+            if(!user || !senha) return alert("Preencha todos os campos!");
 
-            if(!user || !senha) return alert("Preencha todos os campos do cadastro!");
+            const { data: existente } = await supabase.from('contas').select('usuario').eq('usuario', user.toLowerCase()).maybeSingle();
+            if (existente) return alert("Este usuário já existe na nuvem!");
 
-            let contasExistentes = JSON.parse(localStorage.getItem(KEY_AUTH)) || {};
-            if(contasExistentes[user.toLowerCase()]) return alert("Este usuário já existe!");
+            const { error } = await supabase.from('contas').insert([{ usuario: user.toLowerCase(), senha: senha }]);
+            if(error) return alert("Erro ao cadastrar: " + error.message);
 
-            contasExistentes[user.toLowerCase()] = { usuario: user, senha: senha };
-            localStorage.setItem(KEY_AUTH, JSON.stringify(contasExistentes));
             localStorage.setItem(KEY_SESSION, user);
-            
-            alert("Conta criada com sucesso!");
+            alert("Conta criada com sucesso na nuvem!");
             verificarSessao();
         });
 
-        document.getElementById('btn-executar-login').addEventListener('click', () => {
+        document.getElementById('btn-executar-login').addEventListener('click', async () => {
             const user = document.getElementById('login-usuario').value.trim();
             const senha = document.getElementById('login-senha').value.trim();
+            if(!user || !senha) return alert("Preencha todos os campos.");
 
-            if(!user || !senha) return alert("Por favor, preencha o usuário e a senha.");
-
-            let contasExistentes = JSON.parse(localStorage.getItem(KEY_AUTH)) || {};
-            const conta = contasExistentes[user.toLowerCase()];
-
+            const { data: conta, error } = await supabase.from('contas').select('*').eq('usuario', user.toLowerCase()).maybeSingle();
+            
             if(conta && conta.senha === senha) {
                 localStorage.setItem(KEY_SESSION, conta.usuario);
                 verificarSessao();
             } else {
-                alert("Usuário ou senha incorretos.");
+                alert("Usuário ou senha incorretos na nuvem.");
             }
         });
 
@@ -615,152 +563,85 @@
             window.location.reload();
         });
 
-        function verificarSessao() {
+        async function verificarSessao() {
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
             if(usuarioLogado) {
                 document.getElementById('modal-auth').style.display = 'none';
                 document.getElementById('conteudo-sistema').style.display = 'block';
                 document.getElementById('lbl-nome-usuario').innerText = usuarioLogado;
                 
-                // Carrega a configuração específica deste usuário
                 configAnterior = JSON.parse(localStorage.getItem(KEY_CONFIG_PREFIX + usuarioLogado.toLowerCase())) || { sinal: "+", valor: "00:00" };
                 document.getElementById('sinal-anterior').value = configAnterior.sinal;
                 document.getElementById('valor-anterior').value = configAnterior.valor;
 
-                // Inicializa o app e o Banco de Dados ISOLADO do usuário
-                iniciarBancoDados(function() {
-                    atualizarCamposHorarioEVisualizacao();
-                });
+                await carregarDadosDoBanco();
             } else {
                 document.getElementById('modal-auth').style.display = 'flex';
                 document.getElementById('conteudo-sistema').style.display = 'none';
             }
         }
 
-        // --- FIM DO BLOCO DE AUTENTICAÇÃO ---
-
-        function iniciarBancoDados(callback) {
+        // --- OPERAÇÕES NA NUVEM (SUPABASE) ---
+        async function carregarDadosDoBanco() {
             const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
-            // Cria um banco de dados dinâmico por usuário (Garante banco em branco no cadastro)
-            const dbNameIndividual = `${dbBaseName}_${usuarioLogado}`;
-            const request = indexedDB.open(dbNameIndividual, dbVersion);
 
-            request.onupgradeneeded = function(e) {
-                const database = e.target.result;
-                let storeRegistros;
+            const { data: registros } = await supabase.from('registros').select('*').eq('usuario', usuarioLogado);
+            const { data: extras } = await supabase.from('extras').select('*').eq('usuario', usuarioLogado);
 
-                if (!database.objectStoreNames.contains("registros")) {
-                    storeRegistros = database.createObjectStore("registros", { keyPath: "id" });
-                } else {
-                    storeRegistros = e.target.transaction.objectStore("registros");
+            listaRegistros = (registros || []).map(r => {
+                if (r.isBlob && typeof r.comprovante === 'string') {
+                    r.comprovante = base64ParaBlob(r.comprovante);
                 }
+                return r;
+            });
 
-                if (!storeRegistros.indexNames.contains("data")) {
-                    storeRegistros.createIndex("data", "data", { unique: false });
-                }
-                if (!storeRegistros.indexNames.contains("tipo")) {
-                    storeRegistros.createIndex("tipo", "tipo", { unique: false });
-                }
-                if (!storeRegistros.indexNames.contains("tipoLancamento")) {
-                    storeRegistros.createIndex("tipoLancamento", "tipoLancamento", { unique: false });
-                }
-
-                if (!database.objectStoreNames.contains("extras")) {
-                    database.createObjectStore("extras", { keyPath: "data" });
-                }
-            };
-
-            request.onsuccess = function(e) {
-                db = e.target.result;
-                carregarDadosDoBanco(callback);
-            };
-
-            request.onerror = function() {
-                alert("Erro catastrófico ao tentar abrir o Banco de Dados IndexedDB.");
-            };
-        }
-
-        function carregarDadosDoBanco(callback) {
-            const transaction = db.transaction(["registros", "extras"], "readonly");
-            const storeRegistros = transaction.objectStore("registros");
-            const storeExtras = transaction.objectStore("extras");
-
-            listaRegistros = [];
             extrasAprovadas = {};
+            (extras || []).forEach(e => {
+                extrasAprovadas[e.data] = e.aprovado;
+            });
 
-            storeRegistros.openCursor().onsuccess = function(e) {
-                const cursor = e.target.result;
-                if (cursor) {
-                    listaRegistros.push(cursor.value);
-                    cursor.continue();
-                } else {
-                    storeExtras.openCursor().onsuccess = function(ev) {
-                        const cursorEx = ev.target.result;
-                        if (cursorEx) {
-                            extrasAprovadas[cursorEx.value.data] = cursorEx.value.aprovado;
-                            cursorEx.continue();
-                        } else {
-                            if (callback) callback();
-                        }
-                    };
-                }
-            };
+            atualizarCamposHorarioEVisualizacao();
         }
 
-        function dbSalvarRegistro(registro, callback) {
-            const transaction = db.transaction(["registros"], "readwrite");
-            const store = transaction.objectStore("registros");
-            const request = store.put(registro);
-            request.onsuccess = function() {
-                if (callback) callback();
-            };
+        async function dbSalvarRegistro(registro, callback) {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            const dados = { ...registro, usuario: usuarioLogado };
+
+            if (dados.comprovante instanceof Blob) {
+                dados.comprovante = await blobParaBase64(dados.comprovante);
+                dados.isBlob = true;
+            }
+
+            const { error } = await supabase.from('registros').upsert([dados], { onConflict: 'id' });
+            if (error) alert("Erro ao salvar na nuvem: " + error.message);
+            else if (callback) callback();
         }
 
-        function dbDeletarRegistro(id, callback) {
-            const transaction = db.transaction(["registros"], "readwrite");
-            const store = transaction.objectStore("registros");
-            const request = store.delete(id);
-            request.onsuccess = function() {
-                if (callback) callback();
-            };
+        async function dbDeletarRegistro(id, callback) {
+            const { error } = await supabase.from('registros').delete().eq('id', id);
+            if (error) alert("Erro ao deletar na nuvem: " + error.message);
+            else if (callback) callback();
         }
 
-        function dbSalvarExtra(data, aprovado, callback) {
-            const transaction = db.transaction(["extras"], "readwrite");
-            const store = transaction.objectStore("extras");
-            const request = store.put({ data: data, aprovado: aprovado });
-            request.onsuccess = function() {
-                if (callback) callback();
-            };
+        async function dbSalvarExtra(data, aprovado, callback) {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            const { error } = await supabase.from('extras').upsert([{ usuario: usuarioLogado, data, aprovado }], { onConflict: 'usuario,data' });
+            if (error) alert("Erro no saldo da nuvem: " + error.message);
+            else if (callback) callback();
         }
 
-        function dbDeletarExtra(data, callback) {
-            const transaction = db.transaction(["extras"], "readwrite");
-            const store = transaction.objectStore("extras");
-            const request = store.delete(data);
-            request.onsuccess = function() {
-                if (callback) callback();
-            };
+        async function dbDeletarExtra(data, callback) {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            const { error } = await supabase.from('extras').delete().eq('usuario', usuarioLogado).eq('data', data);
+            if (error) alert("Erro ao remover saldo: " + error.message);
+            else if (callback) callback();
         }
 
-        function dbLimparTudo(callback) {
-            const transaction = db.transaction(["registros", "extras"], "readwrite");
-            const storeReg = transaction.objectStore("registros");
-            const storeExt = transaction.objectStore("extras");
-            
-            storeReg.clear();
-            storeExt.clear();
-            
-            transaction.oncomplete = function() {
-                if (callback) callback();
-            };
-        }
-
+        // --- FLUXO DE COMPUTAÇÃO INTEGÉLIO ---
         window.onload = function() {
             const hoje = new Date().toISOString().split('T')[0];
             inputData.value = hoje;
             inputData.max = hoje; 
-
             definirHoraAtual();
             verificarSessao();
         };
@@ -783,39 +664,7 @@
         }
 
         function validarDataFutura(dataString) {
-            const hojeStr = new Date().toISOString().split('T')[0];
-            return dataString > hojeStr;
-        }
-
-        function comprimirEConverterImagem(file, callback) {
-            if (!file) return callback(null);
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const scaleSize = MAX_WIDTH / img.width;
-                    
-                    if (img.width > MAX_WIDTH) {
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                    } else {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                    }
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    canvas.toBlob(function(blob) {
-                        callback(blob);
-                    }, 'image/jpeg', 0.7);
-                };
-            };
+            return dataString > new Date().toISOString().split('T')[0];
         }
 
         document.getElementById('btn-registrar').addEventListener('click', function() {
@@ -825,52 +674,10 @@
             const arquivoComprovante = document.getElementById('ponto-comprovante').files[0];
 
             if (!data || !hora) return alert("Preencha todos os campos!");
-            if (validarDataFutura(data)) return alert("Não é permitido registrar ponto em datas futuras!");
-
-            const jaExisteAbono = listaRegistros.some(r => r.data === data && r.tipoLancamento === 'abono' && r.tipo !== 'Férias' && r.tipo !== 'Feriado (Com Trabalho)');
-            if (jaExisteAbono) return alert("Este dia já possui uma justificativa ou abono lançado que impede novas batidas.");
-
-            const jaExisteTipo = listaRegistros.some(r => r.data === data && r.tipo === tipo);
-            if (jaExisteTipo) return alert(`Já existe um registro de ${tipo} para este dia.`);
-
-            const batidasDoDia = listaRegistros.filter(r => r.data === data && r.tipoLancamento === 'ponto');
-            const temEntrada = batidasDoDia.some(r => r.tipo === "Entrada");
-            const temAlmocoSaida = batidasDoDia.some(r => r.tipo === "Almoço (Saída)");
-            const temVoltaAlmoco = batidasDoDia.some(r => r.tipo === "Volta do Almoço");
-
-            const minutesNovaBatida = converterParaMinutos(hora);
-            for (let batida of batidasDoDia) {
-                const minutesExistente = converterParaMinutos(batida.horario);
-                if (tipo === "Almoço (Saída)" && batida.tipo === "Entrada" && minutesNovaBatida <= minutesExistente) {
-                    return alert(`Erro: O horário do Almoço (${hora}) não pode ser menor ou igual ao horário de Entrada (${batida.horario})!`);
-                }
-                if (tipo === "Volta do Almoço" && batida.tipo === "Almoço (Saída)" && minutesNovaBatida <= minutesExistente) {
-                    return alert(`Erro: O horário de Volta do Almoço (${hora}) não pode ser menor ou igual ao horário de Saída para o Almoço (${batida.horario})!`);
-                }
-                if (tipo === "Saída Final") {
-                    if (batida.tipo === "Volta do Almoço" && minutesNovaBatida <= minutesExistente) {
-                        return alert(`Erro: A Saída Final (${hora}) não pode ser menor ou igual ao horário de Volta do Almoço (${batida.horario})!`);
-                    }
-                    if (!temAlmocoSaida && batida.tipo === "Entrada" && minutesNovaBatida <= minutesExistente) {
-                        return alert(`Erro: A Saída Final (${hora}) não pode ser menor ou igual ao horário de Entrada (${batida.horario})!`);
-                    }
-                }
-                if (minutesNovaBatida <= minutesExistente) {
-                    return alert(`Erro de Consistência: Você está tentando registrar um horário (${hora}) que conflita com a sequência das batidas já existentes.`);
-                }
-            }
-
-            if (tipo === "Almoço (Saída)" && !temEntrada) return alert("Erro: Não é possível registrar o Almoço (Saída) sem antes registrar uma Entrada!");
-            if (tipo === "Volta do Almoço" && (!temEntrada || !temAlmocoSaida)) return alert("Erro: Não é possível registrar a Volta do Almoço sem antes ter uma Entrada e uma Saída para o Almoço!");
-            if (tipo === "Saída Final" && !temEntrada) return alert("Erro: Não é possível registrar a Saída Final sem ter uma Entrada registrada neste dia!");
-            if (tipo === "Saída Final" && (temAlmocoSaida || temVoltaAlmoco) && (!temAlmocoSaida || !temVoltaAlmoco)) {
-                return alert("Erro: Você iniciou o fluxo de almoço. Registre a Saída e a Volta do almoço completamente antes da Saída Final!");
-            }
+            if (validarDataFutura(data)) return alert("Não é permitido registrar ponto no futuro!");
 
             const btnRegistrar = document.getElementById('btn-registrar');
-            const textoOriginal = btnRegistrar.innerText;
             btnRegistrar.disabled = true;
-            btnRegistrar.innerText = "Processando Imagem...";
 
             comprimirEConverterImagem(arquivoComprovante, function(blobResultado) {
                 const novoReg = {
@@ -887,8 +694,6 @@
                     listaRegistros.push(novoReg);
                     document.getElementById('ponto-comprovante').value = "";
                     btnRegistrar.disabled = false;
-                    btnRegistrar.innerText = textoOriginal;
-                    
                     atualizarCamposHorarioEVisualizacao();
                     definirHoraAtual();
                 });
@@ -898,88 +703,28 @@
         document.getElementById('btn-abonar').addEventListener('click', function() {
             const data = inputData.value;
             const motivo = document.getElementById('ponto-justificativa').value;
+            if (!data || !motivo) return alert("Selecione os campos necessários.");
 
-            if (!data || !motivo) return alert("Selecione a data e o tipo de justificativa!");
-            if (validarDataFutura(data)) return alert("Não é permitido lançar justificativa em datas futuras!");
+            const novoAbono = {
+                id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
+                data: data,
+                tipo: motivo,
+                horario: motivo === "Férias" ? "Férias" : "08:00 (Abonado)",
+                tipoLancamento: 'abono',
+                observacao: ""
+            };
 
-            const confirmacao = confirm(`Deseja aplicar a justificativa para o dia ${data.split('-').reverse().join('/')} por motivo de "${motivo}"?`);
-            if (!confirmacao) return;
-
-            if (motivo === "Ato do Presidente (Dispensa Parcial)" || motivo === "Férias" || motivo === "Feriado (Com Trabalho)") {
-                const jaTemMesmoAbono = listaRegistros.some(r => r.data === data && r.tipoLancamento === 'abono');
-                if (jaTemMesmoAbono) return alert("Este dia já possui uma justificativa lançada.");
-
-                let txtHorario = "Dispensado";
-                if (motivo === "Férias") txtHorario = "Férias";
-                if (motivo === "Feriado (Com Trabalho)") txtHorario = "Feriado 100%";
-
-                const novoAbono = {
-                    id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
-                    data: data,
-                    tipo: motivo,
-                    horario: txtHorario,
-                    tipoLancamento: 'abono',
-                    observacao: ""
-                };
-
-                dbSalvarRegistro(novoAbono, function() {
-                    listaRegistros.push(novoAbono);
-                    atualizarCamposHorarioEVisualizacao();
-                    document.getElementById('ponto-justificativa').value = "";
-                });
-            } else {
-                const batidasParaRemover = listaRegistros.filter(r => r.data === data);
-                const transaction = db.transaction(["registros", "extras"], "readwrite");
-                const storeReg = transaction.objectStore("registros");
-                const storeExt = transaction.objectStore("extras");
-
-                batidasParaRemover.forEach(r => storeReg.delete(r.id));
-                storeExt.delete(data);
-
-                transaction.oncomplete = function() {
-                    listaRegistros = listaRegistros.filter(r => r.data !== data);
-                    if (extrasAprovadas[data]) delete extrasAprovadas[data];
-
-                    const novoAbono = {
-                        id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
-                        data: data,
-                        tipo: motivo,
-                        horario: "08:00 (Abonado)",
-                        tipoLancamento: 'abono',
-                        observacao: ""
-                    };
-
-                    dbSalvarRegistro(novoAbono, function() {
-                        listaRegistros.push(novoAbono);
-                        atualizarCamposHorarioEVisualizacao();
-                        document.getElementById('ponto-justificativa').value = "";
-                    });
-                };
-            }
+            dbSalvarRegistro(novoAbono, function() {
+                listaRegistros.push(novoAbono);
+                atualizarCamposHorarioEVisualizacao();
+            });
         });
 
         function deletarRegistro(id) {
-            const registro = listaRegistros.find(r => String(r.id) === String(id));
-            if (!registro) {
-                alert("Registro não encontrado.");
-                return;
-            }
-
-            const confirmar = confirm(`Deseja realmente excluir o registro de ${registro.tipo}?\n\nEsta ação não poderá ser desfeita.`);
-            if (!confirmar) return;
-
-            dbDeletarRegistro(registro.id, function() {
+            if (!confirm("Excluir este registro permanentemente da nuvem?")) return;
+            dbDeletarRegistro(id, function() {
                 listaRegistros = listaRegistros.filter(r => String(r.id) !== String(id));
-                
-                if(registro.tipo === "Férias" || registro.tipo === "Feriado (Com Trabalho)") {
-                    dbDeletarExtra(registro.data, function() {
-                        if(extrasAprovadas[registro.data]) delete extrasAprovadas[registro.data];
-                        atualizarCamposHorarioEVisualizacao();
-                    });
-                } else {
-                    atualizarCamposHorarioEVisualizacao();
-                }
-                alert("Registro excluído com sucesso.");
+                atualizarCamposHorarioEVisualizacao();
             });
         }
 
@@ -987,17 +732,13 @@
             idRegistroModalAtual = id;
             const registro = listaRegistros.find(r => String(r.id) === String(id));
             if (registro) {
-                document.getElementById('modal-obs-titulo').innerText = `Observação — ${registro.tipo}`;
                 document.getElementById('modal-obs-texto').value = registro.observacao || "";
                 document.getElementById('modal-observacao').style.display = "flex";
             }
         }
 
-        document.getElementById('btn-fechar-modal').addEventListener('click', function() {
-            document.getElementById('modal-observacao').style.display = "none";
-            idRegistroModalAtual = null;
-        });
-
+        document.getElementById('btn-fechar-modal').addEventListener('click', () => { document.getElementById('modal-observacao').style.display = "none"; });
+        
         document.getElementById('btn-salvar-modal').addEventListener('click', function() {
             if (idRegistroModalAtual) {
                 const registro = listaRegistros.find(r => r.id === idRegistroModalAtual);
@@ -1005,86 +746,65 @@
                     registro.observacao = document.getElementById('modal-obs-texto').value;
                     dbSalvarRegistro(registro, function() {
                         document.getElementById('modal-observacao').style.display = "none";
-                        idRegistroModalAtual = null;
                         atualizarCamposHorarioEVisualizacao();
                     });
                 }
             }
         });
 
-        document.getElementById('btn-limpar-dia').addEventListener('click', function() {
-            const data = inputData.value;
-            if (!data) return;
-            if (confirm(`Remover todos os registros cadastrados no dia ${data.split('-').reverse().join('/')}?`)) {
-                const batidasParaRemover = listaRegistros.filter(r => r.data === data);
-                const transaction = db.transaction(["registros", "extras"], "readwrite");
-                const storeReg = transaction.objectStore("registros");
-                const storeExt = transaction.objectStore("extras");
-
-                batidasParaRemover.forEach(r => storeReg.delete(r.id));
-                storeExt.delete(data);
-
-                transaction.oncomplete = function() {
-                    listaRegistros = listaRegistros.filter(r => r.data !== data);
-                    if (extrasAprovadas[data]) delete extrasAprovadas[data];
-                    atualizarCamposHorarioEVisualizacao();
-                };
-            }
-        });
-
-        document.getElementById('btn-limpar-tudo').addEventListener('click', function() {
-            if (confirm("🚨 ATENÇÃO: Tem certeza que deseja apagar permanentemente todo o histórico do banco de dados local IndexedDB deste usuário?")) {
-                dbLimparTudo(function() {
-                    const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
-                    listaRegistros = [];
-                    extrasAprovadas = {};
-                    configAnterior = { sinal: "+", valor: "00:00" };
-                    localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
-                    atualizarCamposHorarioEVisualizacao();
-                    alert("Banco de dados do usuário completamente zerado!");
-                });
-            }
-        });
-
         document.getElementById('btn-fixar-anterior').addEventListener('click', function() {
-            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
+            const user = localStorage.getItem(KEY_SESSION).toLowerCase();
             configAnterior.sinal = document.getElementById('sinal-anterior').value;
             configAnterior.valor = document.getElementById('valor-anterior').value;
-            localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
+            localStorage.setItem(KEY_CONFIG_PREFIX + user, JSON.stringify(configAnterior));
             atualizarCamposHorarioEVisualizacao();
-            alert("Horas anteriores salvas com sucesso!");
+            alert("Fixado com sucesso!");
         });
 
         document.getElementById('btn-enviar-banco').addEventListener('click', function() {
             const data = inputData.value;
-            const resumo = calcularTurnosDoDia(data);
-            
-            if (resumo.minutosTrabalhados > 0) {
-                dbSalvarExtra(data, true, function() {
-                    extrasAprovadas[data] = true;
-                    alert("Saldo positivo integrado ao Banco de Horas com sucesso!");
-                    atualizarCamposHorarioEVisualizacao();
+            dbSalvarExtra(data, true, function() {
+                extrasAprovadas[data] = true;
+                atualizarCamposHorarioEVisualizacao();
+            });
+        });
+
+        document.getElementById('btn-limpar-dia').addEventListener('click', function() {
+            const data = inputData.value;
+            const doDia = listaRegistros.filter(r => r.data === data);
+            if (doDia.length === 0) return alert("Nenhum registro encontrado nesta data.");
+            if (!confirm(`Tem certeza que deseja apagar os ${doDia.length} registros do dia ${data.split('-').reverse().join('/')} da nuvem?`)) return;
+
+            let apagados = 0;
+            doDia.forEach(r => {
+                dbDeletarRegistro(r.id, () => {
+                    apagados++;
+                    if (apagados === doDia.length) {
+                        listaRegistros = listaRegistros.filter(x => x.data !== data);
+                        if (extrasAprovadas[data]) {
+                            dbDeletarExtra(data, () => {
+                                delete extrasAprovadas[data];
+                                atualizarCamposHorarioEVisualizacao();
+                            });
+                        } else {
+                            atualizarCamposHorarioEVisualizacao();
+                        }
+                    }
                 });
-            }
+            });
         });
 
         function calcularTurnosDoDia(dataAlvo) {
             const doDia = listaRegistros.filter(r => r.data === dataAlvo);
-            if (doDia.length === 0) return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 0, temSaidaFinal: false, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false, isFeriadoTrabalho: false };
+            if (doDia.length === 0) return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 0, temSaidaFinal: false, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false };
 
             const temFaltaDesconto = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Falta (Descontar 8h do Banco)');
             const temAtoPresidente = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Ato do Presidente (Dispensa Parcial)');
             const temFerias = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Férias');
-            const temFeriadoTrabalho = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo === 'Feriado (Com Trabalho)');
-            const temAbonoNormal = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo !== 'Ato do Presidente (Dispensa Parcial)' && r.tipo !== 'Falta (Descontar 8h do Banco)' && r.tipo !== 'Férias' && r.tipo !== 'Feriado (Com Trabalho)');
+            const temAbonoNormal = doDia.some(r => r.tipoLancamento === 'abono' && r.tipo !== 'Ato do Presidente (Dispensa Parcial)' && r.tipo !== 'Falta (Descontar 8h do Banco)' && r.tipo !== 'Férias');
 
-            if (temFaltaDesconto) {
-                return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: true, isFerias: false, isFeriadoTrabalho: false };
-            }
-
-            if (temAbonoNormal) {
-                return { minutosTrabalhados: JORNADA_DIARIA, continuo: false, previsaoSaida: null, isJustificado: true, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false, isFeriadoTrabalho: false };
-            }
+            if (temFaltaDesconto) return { minutosTrabalhados: 0, continuo: false, previsaoSaida: null, isJustificado: false, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: true, isFerias: false };
+            if (temAbonoNormal) return { minutosTrabalhados: JORNADA_DIARIA, continuo: false, previsaoSaida: null, isJustificado: true, totalBatidas: 1, temSaidaFinal: true, isAtoPresidente: false, isFaltaDesconto: false, isFerias: false };
 
             const batidasPonto = doDia.filter(r => r.tipoLancamento === 'ponto');
             const map = {};
@@ -1093,129 +813,47 @@
             let minutesTrabalhados = 0;
             let continuo = false;
             let previsaoSaida = null;
-
             const hojeStr = new Date().toISOString().split('T')[0];
-            const agora = new Date();
-            const minutosAgora = (agora.getHours() * 60) + agora.getMinutes();
+            const minutosAgora = (new Date().getHours() * 60) + new Date().getMinutes();
 
             const temEntrada = map["Entrada"] !== undefined;
             const temAlmocoSaida = map["Almoço (Saída)"] !== undefined;
             const temVoltaAlmoco = map["Volta do Almoço"] !== undefined;
             const temSaidaFinal = map["Saída Final"] !== undefined;
-
-            const metaDoDia = (temFerias || temFeriadoTrabalho) ? 0 : JORNADA_DIARIA;
+            const metaDoDia = temFerias ? 0 : JORNADA_DIARIA;
 
             if (temEntrada && temSaidaFinal && !temAlmocoSaida && !temVoltaAlmoco) {
                 minutesTrabalhados = map["Saída Final"] - map["Entrada"];
             } else {
                 if (temEntrada) {
-                    if (temAlmocoSaida) {
-                        minutesTrabalhados += (map["Almoço (Saída)"] - map["Entrada"]);
-                    } else {
-                        if (dataAlvo === hojeStr) {
-                            minutesTrabalhados += Math.max(0, minutosAgora - map["Entrada"]);
-                        }
+                    if (temAlmocoSaida) minutesTrabalhados += (map["Almoço (Saída)"] - map["Entrada"]);
+                    else {
+                        if (dataAlvo === hojeStr) minutesTrabalhados += Math.max(0, minutosAgora - map["Entrada"]);
                         continuo = true;
                         previsaoSaida = formatarMinutos(map["Entrada"] + metaDoDia);
                     }
                 }
-
                 if (temVoltaAlmoco) {
-                    if (temSaidaFinal) {
-                        minutesTrabalhados += (map["Saída Final"] - map["Volta do Almoço"]);
-                    } else {
-                        if (dataAlvo === hojeStr) {
-                            minutesTrabalhados += Math.max(0, minutosAgora - map["Volta do Almoço"]);
-                        }
+                    if (temSaidaFinal) minutesTrabalhados += (map["Saída Final"] - map["Volta do Almoço"]);
+                    else {
+                        if (dataAlvo === hojeStr) minutesTrabalhados += Math.max(0, minutosAgora - map["Volta do Almoço"]);
                         continuo = true;
                         const feitos = temAlmocoSaida ? (map["Almoço (Saída)"] - map["Entrada"]) : 0;
-                        const restantes = metaDoDia - feitos;
-                        previsaoSaida = formatarMinutos(map["Volta do Almoço"] + Math.max(0, restantes));
+                        previsaoSaida = formatarMinutos(map["Volta do Almoço"] + Math.max(0, metaDoDia - feitos));
                     }
                 }
             }
 
-            if (temAtoPresidente) {
-                return { 
-                    minutosTrabalhados: JORNADA_DIARIA, 
-                    continuo: false, 
-                    previsaoSaida: null, 
-                    isJustificado: true, 
-                    totalBatidas: doDia.length,
-                    temSaidaFinal: true,
-                    isAtoPresidente: true,
-                    minutosReaisTrabalhados: minutesTrabalhados,
-                    isFerias: false,
-                    isFeriadoTrabalho: false
-                };
-            }
+            if (temAtoPresidente) return { minutosTrabalhados: JORNADA_DIARIA, continuo: false, totalBatidas: doDia.length, temSaidaFinal: true, isAtoPresidente: true, minutosReaisTrabalhados: minutesTrabalhados, isFerias: false };
+            if (temFerias) return { minutosTrabalhados: minutesTrabalhados, continuo, previsaoSaida, isJustificado: minutesTrabalhados === 0, totalBatidas: doDia.length, temSaidaFinal, isFerias: true };
 
-            if (temFerias || temFeriadoTrabalho) {
-                return {
-                    minutosTrabalhados: minutesTrabalhados,
-                    continuo: continuo,
-                    previsaoSaida: previsaoSaida,
-                    isJustificado: minutesTrabalhados === 0, 
-                    totalBatidas: doDia.length,
-                    temSaidaFinal: temSaidaFinal,
-                    isAtoPresidente: false,
-                    isFaltaDesconto: false,
-                    isFerias: temFerias,
-                    isFeriadoTrabalho: temFeriadoTrabalho
-                };
-            }
-
-            return { 
-                minutosTrabalhados: minutesTrabalhados, 
-                continuo, 
-                previsaoSaida, 
-                isJustificado: false, 
-                totalBatidas: doDia.length,
-                temSaidaFinal: temSaidaFinal,
-                isAtoPresidente: false,
-                isFaltaDesconto: false,
-                isFerias: false,
-                isFeriadoTrabalho: false
-            };
-        }
-
-        function visualizarComprovante(id) {
-            const registro = listaRegistros.find(r => String(r.id) === String(id));
-            if (!registro || !registro.comprovante) return alert("Mídia não encontrada.");
-
-            if (registro.comprovante instanceof Blob) {
-                const urlCriada = URL.createObjectURL(registro.comprovante);
-                const novaJanela = window.open();
-                if (!novaJanela) return alert("Por favor, permita pop-ups para visualizar o anexo.");
-                
-                novaJanela.document.write(`
-                    <html>
-                    <head><title>Comprovante de Ponto - MVF5 Systems</title></head>
-                    <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                        <img src="${urlCriada}" style="max-width:95%; max-height:95vh; box-shadow: 0 4px 25px rgba(0,0,0,0.6); border-radius:8px;" />
-                    </body>
-                    </html>
-                `);
-                novaJanela.onload = function() {
-                    URL.revokeObjectURL(urlCriada);
-                };
-            } else if (typeof registro.comprovante === 'string') {
-                const novaJanela = window.open();
-                novaJanela.document.write(`
-                    <html>
-                    <head><title>Comprovante de Ponto - MVF5 Systems</title></head>
-                    <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                        <img src="${registro.comprovante}" style="max-width:95%; max-height:95vh; box-shadow: 0 4px 25px rgba(0,0,0,0.6); border-radius:8px;" />
-                    </body>
-                    </html>
-                `);
-            }
+            return { minutosTrabalhados: minutesTrabalhados, continuo, previsaoSaida, isJustificado: false, totalBatidas: doDia.length, temSaidaFinal, isFerias: false };
         }
 
         function atualizarCamposHorarioEVisualizacao() {
             const dataSelecionada = inputData.value;
-
             tabelaCorpo.innerHTML = "";
+
             const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada).sort((a,b) => {
                 if(a.tipoLancamento === 'abono') return -1;
                 return converterParaMinutos(a.horario) - converterParaMinutos(b.horario);
@@ -1228,22 +866,18 @@
                 if (r.tipo.includes("Saída Final")) clsBadge = "badge-saida";
                 if (r.tipoLancamento === 'abono') clsBadge = "badge-abono";
 
-                const botaoComprovante = r.comprovante 
-                    ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size:12px; height: 28px; background: #0284c7;" onclick="visualizarComprovante('${r.id}')">👁️ Ver</button>`
-                    : '';
-
-                const temObsText = r.observacao ? ' 💬' : '';
+                const botaoComprovante = r.comprovante ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size:12px; height: 28px; background: #0284c7;" onclick="visualizarComprovante('${r.id}')">👁️ Ver</button>` : '';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${r.data.split('-').reverse().join('/')}</td>
-                    <td><span class="badge ${clsBadge}">${r.tipo}${temObsText}</span></td>
+                    <td><span class="badge ${clsBadge}">${r.tipo}${r.observacao ? ' 💬' : ''}</span></td>
                     <td><strong>${r.horario}</strong></td>
                     <td>
                         <div style="display: flex; gap: 0.25rem;">
                             ${botaoComprovante}
                             <button class="btn btn-primary" style="padding: 4px 10px; font-size:12px; height: 28px; background: #1e293b;" onclick="abrirModalObservacao('${r.id}')">📝 Obs.</button>
-                            <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size:12px; height: 28px;" onclick="deletarRegistro('${r.id}')">🗑️ Deletar</button>
+                            <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size:12px; height: 28px;" onclick="deletarRegistro('${r.id}')">🗑️</button>
                         </div>
                     </td>
                 `;
@@ -1251,337 +885,217 @@
             });
 
             const resumoDia = calcularTurnosDoDia(dataSelecionada);
-            
-            if (resumoDia.isAtoPresidente) {
-                document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(JORNADA_DIARIA);
-            } else {
-                document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(resumoDia.minutosTrabalhados);
-            }
+            document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(resumoDia.isAtoPresidente ? JORNADA_DIARIA : resumoDia.minutosTrabalhados);
 
-            const banner = document.getElementById('banner-trabalho-continuous');
-            if (resumoDia.continuo && resumoDia.previsaoSaida) {
-                banner.style.display = "flex";
-                if (resumoDia.isFerias) {
-                    document.getElementById('texto-banner-trabalho').innerText = `Trabalhando nas Férias de forma contínua. Todo o tempo de ${formatarMinutos(resumoDia.minutosTrabalhados)} irá para o Banco de Horas.`;
-                } else if (resumoDia.isFeriadoTrabalho) {
-                    document.getElementById('texto-banner-trabalho').innerText = `Trabalhando no Feriado de forma contínua. Todo o tempo de ${formatarMinutos(resumoDia.minutosTrabalhados)} irá para o Banco de Horas a 100%.`;
-                } else {
-                    document.getElementById('texto-banner-trabalho').innerText = `Trabalhando direto de forma contínua, sua saída para dar 8h será às ${resumoDia.previsaoSaida}.`;
-                }
-            } else {
-                banner.style.display = "none";
-            }
-
-            const saldoDia = (resumoDia.isFerias || resumoDia.isFeriadoTrabalho) ? resumoDia.minutosTrabalhados : (resumoDia.minutosTrabalhados - JORNADA_DIARIA);
-            
+            const saldoDia = resumoDia.isFerias ? resumoDia.minutosTrabalhados : (resumoDia.minutosTrabalhados - JORNADA_DIARIA);
             const labelDiaSaldo = document.getElementById('label-dia-saldo');
             const txtDiaSaldo = document.getElementById('txt-dia-saldo');
             const txtPontoStatus = document.getElementById('txt-ponto-status');
             const btnEnviarBanco = document.getElementById('btn-enviar-banco');
             const barraProgresso = document.getElementById('barra-progresso');
 
-            if (resumoDia.totalBatidas === 0) {
-                labelDiaSaldo.innerText = "Saldo devedor do dia";
-                txtDiaSaldo.innerText = "08:00";
-                txtDiaSaldo.style.color = "#dc2626";
-                txtPontoStatus.innerText = "PONTO INCOMPLETO";
-                txtPontoStatus.style.color = "#dc2626";
-                barraProgresso.style.width = "0%";
-                btnEnviarBanco.style.display = "none";
-            } else if (resumoDia.isFaltaDesconto) { 
-                labelDiaSaldo.innerText = "Saldo devedor (Banco)";
-                txtDiaSaldo.innerText = "-08:00";
-                txtDiaSaldo.style.color = "#dc2626";
-                txtPontoStatus.innerText = "FALTA LANÇADA";
-                txtPontoStatus.style.color = "#dc2626";
-                barraProgresso.style.width = "100%";
-                btnEnviarBanco.style.display = "none";
-            } else if (resumoDia.isJustificado && resumoDia.minutosTrabalhados === 0) {
-                labelDiaSaldo.innerText = "Saldo do dia";
-                txtDiaSaldo.innerText = resumoDia.isAtoPresidente ? "00:00 (Disp. Ato)" : "00:00 (Férias / Justificado)";
-                txtDiaSaldo.style.color = "#64748b";
-                txtPontoStatus.innerText = "PONTO COMPLETO";
-                txtPontoStatus.style.color = "#10b981";
-                barraProgresso.style.width = "100%";
-                btnEnviarBanco.style.display = "none";
-            } else if ((resumoDia.isFerias || resumoDia.isFeriadoTrabalho) && !resumoDia.temSaidaFinal) {
-                labelDiaSaldo.innerText = resumoDia.isFerias ? "Trabalhado nas Férias (Acumulando)" : "Trabalhado no Feriado (Acumulando)";
-                txtDiaSaldo.innerText = `+${formatarMinutos(saldoDia)}`;
-                txtDiaSaldo.style.color = "#2563eb";
-                txtPontoStatus.innerText = resumoDia.isFerias ? "FÉRIAS EM TRABALHO" : "FERIADO EM TRABALHO";
-                txtPontoStatus.style.color = "#f59e0b";
-                barraProgresso.style.width = "50%";
-                
-                btnEnviarBanco.style.display = "inline-flex";
-                if (extrasAprovadas[dataSelecionada]) {
-                    btnEnviarBanco.disabled = true;
-                    btnEnviarBanco.style.background = "#cbd5e1";
-                    btnEnviarBanco.innerText = "✓ Enviado";
-                } else {
-                    btnEnviarBanco.disabled = false;
-                    btnEnviarBanco.style.background = "#10b981";
-                    btnEnviarBanco.innerText = "📥 Enviar";
-                }
-            } else if (!resumoDia.temSaidaFinal) {
-                labelDiaSaldo.innerText = saldoDia < 0 ? "Faltam para 8 hours" : "Saldo parcial positivo";
-                txtDiaSaldo.innerText = formatarMinutos(Math.abs(saldoDia));
-                txtDiaSaldo.style.color = saldoDia < 0 ? "#f59e0b" : "#2563eb";
-                txtPontoStatus.innerText = "PONTO INCOMPLETO";
-                txtPontoStatus.style.color = "#dc2626";
-                
-                let percentual = (resumoDia.minutosTrabalhados / JORNADA_DIARIA) * 100;
-                barraProgresso.style.width = `${Math.min(100, percentual)}%`;
-                btnEnviarBanco.style.display = "none";
+            // Gerenciamento contínuo (Banner)
+            const banner = document.getElementById('banner-trabalho-continuous');
+            if (resumoDia.continuo && resumoDia.previsaoSaida) {
+                document.getElementById('texto-banner-trabalho').innerText = `Trabalhando de forma contínua. Previsão de saída para bater a meta: às ${resumoDia.previsaoSaida}`;
+                banner.style.display = "flex";
             } else {
-                txtPontoStatus.innerText = "PONTO COMPLETO";
-                txtPontoStatus.style.color = "#10b981";
+                banner.style.display = "none";
+            }
+
+            if (resumoDia.totalBatidas === 0) {
+                labelDiaSaldo.innerText = "Saldo devedor do dia"; txtDiaSaldo.innerText = "08:00"; txtDiaSaldo.style.color = "#dc2626";
+                txtPontoStatus.innerText = "PONTO INCOMPLETO"; txtPontoStatus.style.color = "#dc2626"; barraProgresso.style.width = "0%"; btnEnviarBanco.style.display = "none";
+            } else if (resumoDia.isJustificado && resumoDia.minutosTrabalhados === 0) {
+                labelDiaSaldo.innerText = "Saldo do dia"; txtDiaSaldo.innerText = resumoDia.isAtoPresidente ? "00:00 (Disp. Ato)" : "00:00 (Férias / Justificado)";
+                txtDiaSaldo.style.color = "#64748b"; txtPontoStatus.innerText = "PONTO COMPLETO"; txtPontoStatus.style.color = "#10b981"; barraProgresso.style.width = "100%"; btnEnviarBanco.style.display = "none";
+            } else {
+                txtPontoStatus.innerText = resumoDia.temSaidaFinal ? "PONTO COMPLETO" : "PONTO INCOMPLETO";
+                txtPontoStatus.style.color = resumoDia.temSaidaFinal ? "#10b981" : "#dc2626";
                 barraProgresso.style.width = "100%";
 
                 if (saldoDia < 0) {
-                    labelDiaSaldo.innerText = "Saldo devedor do dia";
-                    txtDiaSaldo.innerText = `-${formatarMinutos(Math.abs(saldoDia))}`;
-                    txtDiaSaldo.style.color = "#dc2626";
-                    btnEnviarBanco.style.display = "none";
+                    labelDiaSaldo.innerText = "Saldo devedor"; txtDiaSaldo.innerText = `-${formatarMinutos(Math.abs(saldoDia))}`; txtDiaSaldo.style.color = "#dc2626"; btnEnviarBanco.style.display = "none";
                 } else {
-                    labelDiaSaldo.innerText = (resumoDia.isFerias || resumoDia.isFeriadoTrabalho) ? "Total Extra Acumulado" : "Saldo positivo do dia";
-                    txtDiaSaldo.innerText = `+${formatarMinutos(saldoDia)}`;
-                    txtDiaSaldo.style.color = "#2563eb";
-                    btnEnviarBanco.style.display = "inline-flex";
-
-                    if (extrasAprovadas[dataSelecionada]) {
-                        btnEnviarBanco.disabled = true;
-                        btnEnviarBanco.style.background = "#cbd5e1";
-                        btnEnviarBanco.innerText = "✓ Enviado";
-                    } else {
-                        btnEnviarBanco.disabled = false;
-                        btnEnviarBanco.style.background = "#10b981";
-                        btnEnviarBanco.innerText = "📥 Enviar";
-                    }
+                    labelDiaSaldo.innerText = "Saldo positivo"; txtDiaSaldo.innerText = `+${formatarMinutos(saldoDia)}`; txtDiaSaldo.style.color = "#2563eb"; btnEnviarBanco.style.display = "inline-flex";
+                    btnEnviarBanco.innerText = extrasAprovadas[dataSelecionada] ? "✓ Enviado" : "📥 Enviar";
+                    btnEnviarBanco.disabled = !!extrasAprovadas[dataSelecionada];
                 }
             }
 
-            const apenasBatidas = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
-            if (!apenasBatidas.some(r => r.tipo === "Entrada")) inputTipo.value = "Entrada";
-            else if (!apenasBatidas.some(r => r.tipo === "Almoço (Saída)")) inputTipo.value = "Almoço (Saída)";
-            else if (!apenasBatidas.some(r => r.tipo === "Volta do Almoço")) inputTipo.value = "Volta do Almoço";
-            else if (!apenasBatidas.some(r => r.tipo === "Saída Final")) inputTipo.value = "Saída Final";
-            else inputTipo.value = "Entrada";
-
-            if (dataSelecionada) {
-                const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                const parteMes = parseInt(dataSelecionada.split('-')[1], 10) - 1;
-                const parteAno = dataSelecionada.split('-')[0];
-                document.getElementById('titulo-resumo-mensal').innerText = `Resumo Mensal — ${nomesMeses[parteMes]} de ${parteAno}`;
-            }
-
+            // Estatísticas Mensais Globais
             const todasAsDatasComRegistros = [...new Set(listaRegistros.map(r => r.data))];
             const mesCorrenteFiltro = dataSelecionada.substring(0, 7);
-            const diasContadosNoMes = todasAsDatasComRegistros.filter(d => d.startsWith(mesCorrenteFiltro)).length;
-            document.getElementById('txt-mes-dias').innerText = `${diasContadosNoMes} ${diasContadosNoMes === 1 ? 'dia' : 'dias'}`;
+            
+            const mesesNomes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+            const pParts = dataSelecionada.split('-');
+            document.getElementById('titulo-resumo-mensal').innerText = `Resumo Mensal - ${mesesNomes[parseInt(pParts[1],10)-1]} / ${pParts[0]}`;
 
-            let saldoMesAtualMinutos = 0;
-            let totalLiquidoHistoricoMinutos = 0;
-            let acumHorasExtrasMes = 0;
-            let acumHorasDevedorasMes = 0;
-            let acumDiasAbonadosMes = 0;
-			let acumHorasEfetivasMes = 0; // Nova variável para acumular o trabalho real
+            document.getElementById('txt-mes-dias').innerText = todasAsDatasComRegistros.filter(d => d.startsWith(mesCorrenteFiltro)).length + " dias";
+
+            let saldoMesAtualMinutos = 0, totalLiquidoHistoricoMinutos = 0, acumHorasExtrasMes = 0, acumHorasDevedorasMes = 0, acumHorasEfetivasMes = 0;
 
             todasAsDatasComRegistros.forEach((d) => {
                 const res = calcularTurnosDoDia(d);
                 const totalDoDia = res.minutosTrabalhados;
-                
-                const liquidoDia = (res.isFerias || res.isFeriadoTrabalho) ? totalDoDia : (totalDoDia - JORNADA_DIARIA);
+                const liquidoDia = res.isFerias ? totalDoDia : (totalDoDia - JORNADA_DIARIA);
 
-                let realComputadoGeral = 0;
-                let realComputadoMes = 0;
+                let realComputadoGeral = 0, realComputadoMes = 0;
                 
-                if (res.isFaltaDesconto) { 
+                if (res.isFaltaDesconto) {
                     realComputadoGeral = -JORNADA_DIARIA;
-                    if (d.startsWith(mesCorrenteFiltro)) {
-                        realComputadoMes = -JORNADA_DIARIA;
-                        acumHorasDevedorasMes += JORNADA_DIARIA;
-                    }
-                } else if (res.isJustificado && res.minutosTrabalhados === 0) { 
-                    // Dias puramente justificados/abonados sem trabalho não somam horas efetivas
-                    realComputadoGeral = 0;
-                    realComputadoMes = 0;
+                    if (d.startsWith(mesCorrenteFiltro)) { realComputadoMes = -JORNADA_DIARIA; acumHorasDevedorasMes += JORNADA_DIARIA; }
+                } else if (res.isJustificado && totalDoDia === 0) {
+                    realComputadoGeral = 0; realComputadoMes = 0;
                 } else {
-						// Se o usuário trabalhou (parcial ou totalmente), acumulamos no indicador mensal
                     if (d.startsWith(mesCorrenteFiltro)) {
-                        // Se for Ato do Presidente, adiciona as horas reais trabalhadas guardadas na propriedade correspondente
                         acumHorasEfetivasMes += res.isAtoPresidente ? (res.minutosReaisTrabalhados || 0) : totalDoDia;
                     }
-                    if (!res.temSaidaFinal && !res.isFerias && !res.isFeriadoTrabalho) return; 
-
-                    if (liquidoDia < 0) {
-                        realComputadoGeral = liquidoDia;
-                        if (d.startsWith(mesCorrenteFiltro)) {
-                            realComputadoMes = liquidoDia;
-                            acumHorasDevedorasMes += Math.abs(liquidoDia);
-                        }
-                    } else if (liquidoDia > 0) {
-                        if (extrasAprovadas[d] === true) {
-                            realComputadoGeral = liquidoDia;
-                            if (d.startsWith(mesCorrenteFiltro)) {
-                                realComputadoMes = liquidoDia;
-                                acumHorasExtrasMes += liquidoDia;
-                            }
-                        }
+                    if (res.temSaidaFinal || res.isFerias) {
+                        if (liquidoDia < 0) { realComputadoGeral = liquidoDia; if (d.startsWith(mesCorrenteFiltro)) { realComputadoMes = liquidoDia; acumHorasDevedorasMes += Math.abs(liquidoDia); } }
+                        else if (liquidoDia > 0 && extrasAprovadas[d] === true) { realComputadoGeral = liquidoDia; if (d.startsWith(mesCorrenteFiltro)) { realComputadoMes = liquidoDia; acumHorasExtrasMes += liquidoDia; } }
                     }
                 }
-
                 totalLiquidoHistoricoMinutos += realComputadoGeral;
                 if (d.startsWith(mesCorrenteFiltro)) saldoMesAtualMinutos += realComputadoMes;
             });
 
             let minutesIniciaisAnteriores = converterParaMinutos(configAnterior.valor);
-            if (configAnterior.sinal === "-") minutosIniciaisAnteriores = -minutosIniciaisAnteriores;
-
-            let acumuladorGeralMinutos = totalLiquidoHistoricoMinutos + minutesIniciaisAnteriores;
+            if (configAnterior.sinal === "-") minutesIniciaisAnteriores = -minutesIniciaisAnteriores;
 
             renderizarEstiloSaldo(document.getElementById('txt-mes-saldo'), saldoMesAtualMinutos);
-            renderizarEstiloSaldo(document.getElementById('txt-geral-acumulado'), acumuladorGeralMinutos);
+            renderizarEstiloSaldo(document.getElementById('txt-geral-acumulado'), totalLiquidoHistoricoMinutos + minutesIniciaisAnteriores);
 
             document.getElementById('stat-horas-extras').innerText = formatarMinutos(acumHorasExtrasMes);
             document.getElementById('stat-horas-devedoras').innerText = formatarMinutos(acumHorasDevedorasMes);
-            document.getElementById('stat-horas-efetivas').innerText = formatarMinutos(acumHorasEfetivasMes); // Atualiza o novo card
+            document.getElementById('stat-horas-efetivas').innerText = formatarMinutos(acumHorasEfetivasMes);
         }
 
         function renderizarEstiloSaldo(elemento, minutes) {
             const valorAbsoluto = formatarMinutos(Math.abs(minutes));
-            if (minutes > 0) {
-                elemento.innerText = `+${valorAbsoluto}`; elemento.style.color = "#2563eb"; 
-            } else if (minutes < 0) {
-                elemento.innerText = `-${valorAbsoluto}`; elemento.style.color = "#dc2626"; 
-            } else {
-                elemento.innerText = "00:00"; elemento.style.color = "#64748b"; 
-            }
+            if (minutes > 0) { elemento.innerText = `+${valorAbsoluto}`; elemento.style.color = "#2563eb"; }
+            else if (minutes < 0) { elemento.innerText = `-${valorAbsoluto}`; elemento.style.color = "#dc2626"; }
+            else { elemento.innerText = "00:00"; elemento.style.color = "#64748b"; }
         }
 
-        inputData.addEventListener('change', function() {
-            atualizarCamposHorarioEVisualizacao();
-        });
+        inputData.addEventListener('change', atualizarCamposHorarioEVisualizacao);
+
+        // --- CONVERSORES DE MÍDIA ---
+        function comprimirEConverterImagem(file, callback) {
+            if (!file) return callback(null);
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = function(e) {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.min(800, img.width);
+                    canvas.height = img.height * (canvas.width / img.width);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(b => callback(b), 'image/jpeg', 0.6);
+                };
+            };
+        }
 
         function blobParaBase64(blob) {
-            return new Promise((resolve) => {
-                if (!blob || !(blob instanceof Blob)) return resolve(null);
-                const leitor = new FileReader();
-                leitor.onloadend = () => resolve(leitor.result);
-                leitor.readAsDataURL(blob);
+            return new Promise(res => {
+                const reader = new FileReader(); reader.onloadend = () => res(reader.result); reader.readAsDataURL(blob);
             });
         }
 
-        function base64ParaBlob(base64Data) {
-            if (!base64Data) return null;
-            try {
-                const partes = base64Data.split(',');
-                const byteString = atob(partes[1]);
-                const mimeString = partes[0].split(':')[1].split(';')[0];
-                
-                const ab = new ArrayBuffer(byteString.length);
-                const ia = new Uint8Array(ab);
-                for (let i = 0; i < byteString.length; i++) {
-                    ia[i] = byteString.charCodeAt(i);
-                }
-                return new Blob([ab], { type: mimeString });
-            } catch (e) {
-                console.error("Erro na conversão do backup:", e);
-                return null;
-            }
+        function base64ParaBlob(b64) {
+            const parts = b64.split(','); const byteString = atob(parts[1]);
+            const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            return new Blob([ab], { type: parts[0].split(':')[1].split(';')[0] });
         }
 
-        async function exportarBackupJSON() {
-            if (listaRegistros.length === 0) return alert("⚠️ Não existem registros carregados para exportação.");
+        function visualizarComprovante(id) {
+            const r = listaRegistros.find(x => String(x.id) === String(id));
+            if (!r || !r.comprovante) return;
+            const url = r.comprovante instanceof Blob ? URL.createObjectURL(r.comprovante) : r.comprovante;
+            window.open().document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;"><img src="${url}" style="max-width:95%;max-height:95vh;"/></body>`);
+        }
+
+        // --- BACKUP SISTEMA POR JSON ---
+        document.getElementById('btn-exportar-json').addEventListener('click', async function() {
+            const user = localStorage.getItem(KEY_SESSION).toLowerCase();
+            const payloadPronto = [];
             
-            const btn = document.querySelector("button[onclick='exportarBackupJSON()']");
-            const textoOriginal = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = "⏳ Convertendo arquivos...";
-
-            try {
-                const payloadProcessado = [];
-                for(const r of listaRegistros) {
-                    const copiaItem = { ...r };
-                    if (copiaItem.comprovante && copiaItem.comprovante instanceof Blob) {
-                        copiaItem.comprovante = await blobParaBase64(copiaItem.comprovante);
-                        copiaItem.isBlob = true;
-                    }
-                    payloadProcessado.push(copiaItem);
+            for (let i = 0; i < listaRegistros.length; i++) {
+                const item = { ...listaRegistros[i] };
+                if (item.comprovante instanceof Blob) {
+                    item.comprovante = await blobParaBase64(item.comprovante);
+                    item.isBlob = true;
                 }
-
-                const backupCompleto = {
-                    sistema: "MVF5 Systems - Registro & Cálculo de Ponto (IndexedDB)",
-                    exportadoEm: new Date().toISOString(),
-                    config_anteriores: configAnterior,
-                    extras_aprovadas: extrasAprovadas,
-                    payload: payloadProcessado
-                };
-
-                const blob = new Blob([JSON.stringify(backupCompleto, null, 2)], { type: "application/json" });
-                const link = document.createElement("a");
-                link.download = `backup_ponto_mvf5_${new Date().toISOString().split('T')[0]}.json`;
-                link.href = window.URL.createObjectURL(blob);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch (err) {
-                alert("❌ Erro ao exportar os arquivos de comprovante.");
-                console.error(err);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = textoOriginal;
+                payloadPronto.push(item);
             }
-        }
 
-        function importarBackupJSON(evento) {
-            const arquivo = evento.target.files[0];
+            const dadosObjeto = {
+                usuario: user,
+                config_anterior: configAnterior,
+                extras_aprovadas: extrasAprovadas,
+                payload: payloadPronto
+            };
+
+            const strJson = JSON.stringify(dadosObjeto, null, 2);
+            const blobExport = new Blob([strJson], { type: "application/json" });
+            const urlExport = URL.createObjectURL(blobExport);
+            
+            const link = document.createElement('a');
+            link.href = urlExport;
+            link.download = `backup_ponto_${user}_${inputData.value}.json`;
+            link.click();
+        });
+
+        document.getElementById('btn-importar-json').addEventListener('change', function(e) {
+            const arquivo = e.target.files[0];
             if (!arquivo) return;
+
             const leitor = new FileReader();
-            leitor.onload = function(e) {
+            leitor.onload = async function(evt) {
                 try {
-                    const dados = JSON.parse(e.target.result);
-                    if (!dados.payload) throw new Error();
-                    if (confirm("⚠️ Deseja prosseguir? Isso substituirá todo o histórico atual do banco de dados local IndexedDB pelos dados do arquivo.")) {
+                    const dados = JSON.parse(evt.target.result);
+                    if (!dados.payload || !Array.isArray(dados.payload)) throw new Error();
+
+                    if(confirm("Deseja importar estes registros e enviá-los para a nuvem? Registros com IDs duplicados serão atualizados.")) {
+                        const user = localStorage.getItem(KEY_SESSION).toLowerCase();
                         
-                        dbLimparTudo(function() {
-                            const usuarioLogado = localStorage.getItem(KEY_SESSION).toLowerCase();
-                            if (dados.config_anteriores) {
-                                configAnterior = dados.config_anteriores;
-                                localStorage.setItem(KEY_CONFIG_PREFIX + usuarioLogado, JSON.stringify(configAnterior));
-                            }
+                        // Atualiza as configurações anteriores locais e envia os pontos pra nuvem
+                        configAnterior = dados.config_anterior || { sinal: "+", valor: "00:00" };
+                        localStorage.setItem(KEY_CONFIG_PREFIX + user, JSON.stringify(configAnterior));
 
-                            const transaction = db.transaction(["registros", "extras"], "readwrite");
-                            const storeReg = transaction.objectStore("registros");
-                            const storeExt = transaction.objectStore("extras");
-
-                            listaRegistros = dados.payload.map(r => {
-                                const reg = { ...r };
-                                if (reg.isBlob && typeof reg.comprovante === 'string') {
-                                    reg.comprovante = base64ParaBlob(reg.comprovante);
-                                    delete reg.isBlob;
-                                }
-                                storeReg.put(reg);
-                                return reg;
-                            });
-
-                            if (dados.extras_aprovadas) {
-                                extrasAprovadas = dados.extras_aprovadas;
-                                Object.keys(extrasAprovadas).forEach(k => {
-                                    storeExt.put({ data: k, aprovado: extrasAprovadas[k] });
-                                });
-                            }
-
-                            transaction.oncomplete = function() {
-                                window.location.reload();
+                        for(let r of dados.payload) {
+                            const struct = {
+                                id: r.id,
+                                data: r.data,
+                                tipo: r.tipo,
+                                horario: r.horario,
+                                tipoLancamento: r.tipoLancamento,
+                                observacao: r.observacao || "",
+                                comprovante: r.comprovante || null
                             };
-                        });
+                            
+                            if (r.isBlob && typeof r.comprovante === 'string') {
+                                struct.comprovante = base64ParaBlob(r.comprovante);
+                            }
+                            await new Promise(res => dbSalvarRegistro(struct, res));
+                        }
+
+                        if(dados.extras_aprovadas) {
+                            for(let k of Object.keys(dados.extras_aprovadas)) {
+                                await new Promise(res => dbSalvarExtra(k, dados.extras_aprovadas[k], res));
+                            }
+                        }
+
+                        alert("🚀 Importação e sincronização concluídas com sucesso!");
+                        window.location.reload();
                     }
                 } catch(err) {
                     alert("❌ Falha na leitura! O arquivo enviado é inválido ou está corrompido.");
                 }
             };
             leitor.readAsText(arquivo);
-        }
+        });
     </script>
 </body>
 </html>
