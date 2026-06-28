@@ -714,39 +714,52 @@
         }
 
         function abrirDetalhes(id) {
-            const item = listaRegistros.find(r => r.id === id);
-            if(!item) return;
+    const item = listaRegistros.find(r => r.id === id);
+    if(!item) return;
 
-            const modalCorpo = document.getElementById('modal-corpo');
-            const modalAcao = document.getElementById('modal-acao-extra');
-            
-            let linkComp = '<i>Nenhum anexo fornecido</i>';
-            if(item.comprovante_url) {
-                linkComp = `<a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar Comprovante Anexo</a>`;
-            }
-
-            modalCorpo.innerHTML = `
-                <p><strong>Classificação:</strong> ${item.tipo_lancamento.toUpperCase()}</p>
-                <p><strong>Data:</strong> ${formatarDataBR(item.data)} às ${item.horario}</p>
-                <p><strong>Evento:</strong> ${item.tipo}</p>
-                <p><strong>Notas:</strong> ${item.observacao || 'Nenhuma observação informada.'}</p>
-                <div style="margin-top:1rem; padding: 0.5rem; background:#f1f5f9; border-radius:8px;">${linkComp}</div>
+    const modalCorpo = document.getElementById('modal-corpo');
+    const modalAcao = document.getElementById('modal-acao-extra');
+    
+    let linkComp = '<i>Nenhum anexo fornecido</i>';
+    
+    // Se existir o comprovante (seja URL ou String Base64)
+    if(item.comprovante_url) {
+        if(item.comprovante_url.startsWith('data:image/') || item.comprovante_url.startsWith('data:target')) {
+            // Se for uma imagem, mostra uma miniatura dela no modal
+            linkComp = `
+                <p style="margin-bottom: 0.5rem;"><strong>Comprovante Anexo:</strong></p>
+                <img src="${item.comprovante_url}" alt="Comprovante" style="width:100%; max-height:250px; object-fit:contain; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:0.5rem;"/>
+                <br/>
+                <a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar em tamanho real ↗</a>
             `;
-
-            const statusAprovacao = extrasAprovadas[item.data] || false;
-
-            modalAcao.innerHTML = `
-                <div class="checkbox-container">
-                    <input type="checkbox" id="chk-aprovacao-modal" ${statusAprovacao ? 'checked' : ''} onchange="alternarAprovacaoHoraExtra('${item.data}', ${statusAprovacao})">
-                    <label for="chk-aprovacao-modal">Aprovar banco/hora extra deste dia</label>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-danger" onclick="deletarRegistroIndividual('${item.id}', '${item.data}')">Excluir Ponto</button>
-                </div>
-            `;
-
-            document.getElementById('modal-detalhes').style.display = 'flex';
+        } else {
+            // Se for outro tipo de arquivo (como PDF em Base64 ou link)
+            linkComp = `<a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar Comprovante Anexo (PDF/Arquivo) ↗</a>`;
         }
+    }
+
+    modalCorpo.innerHTML = `
+        <p><strong>Classificação:</strong> ${item.tipo_lancamento.toUpperCase()}</p>
+        <p><strong>Data:</strong> ${formatarDataBR(item.data)} às ${item.horario}</p>
+        <p><strong>Evento:</strong> ${item.tipo}</p>
+        <p><strong>Notas:</strong> ${item.observacao || 'Nenhuma observação informada.'}</p>
+        <div style="margin-top:1rem; padding: 0.75rem; background:#f1f5f9; border-radius:8px;">${linkComp}</div>
+    `;
+
+    const statusAprovacao = extrasAprovadas[item.data] || false;
+
+    modalAcao.innerHTML = `
+        <div class="checkbox-container">
+            <input type="checkbox" id="chk-aprovacao-modal" ${statusAprovacao ? 'checked' : ''} onchange="alternarAprovacaoHoraExtra('${item.data}', ${statusAprovacao})">
+            <label for="chk-aprovacao-modal">Aprovar banco/hora extra deste dia</label>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-danger" onclick="deletarRegistroIndividual('${item.id}', '${item.data}')">Excluir Ponto</button>
+        </div>
+    `;
+
+    document.getElementById('modal-detalhes').style.display = 'flex';
+}
 
         function fecharModal() {
             document.getElementById('modal-detalhes').style.display = 'none';
@@ -861,14 +874,20 @@
                 
                 if(confirm(`Localizamos registros neste arquivo. Deseja importá-los para a conta de ${usuarioLogado.toUpperCase()} no Supabase?`)) {
                     
-                    // Tratamento e limpeza preventiva dos dados antes do upload
                     const registrosFormatados = registrosParaImportar
-                        .filter(r => r && (r.data || r.horario)) // Descarta linhas totalmente vazias se houver
+                        .filter(r => r && (r.data || r.horario))
                         .map(r => {
-                            // Se a data veio em formato completo de Timestamp/ISO, pega apenas o YYYY-MM-DD
                             let dataTratada = r.data ? r.data.split('T')[0] : new Date().toISOString().split('T')[0];
                             
-                            const copia = {
+                            // Recupera o comprovante caso ele tenha vindo como string Base64 ou campo antigo
+                            let compUrl = null;
+                            if (typeof r.comprovante_url === 'string') {
+                                compUrl = r.comprovante_url;
+                            } else if (typeof r.comprovante === 'string') {
+                                compUrl = r.comprovante;
+                            }
+
+                            return {
                                 id: r.id || 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
                                 usuario: usuarioLogado,
                                 data: dataTratada,
@@ -876,24 +895,21 @@
                                 tipo: r.tipo || "Entrada 1",
                                 tipo_lancamento: r.tipo_lancamento || "ponto",
                                 observacao: r.observacao || "",
-                                comprovante_url: typeof r.comprovante === 'string' && r.comprovante.startsWith('data:') ? r.comprovante : null
+                                comprovante_url: compUrl
                             };
-                            return copia;
                         });
 
-                    // Envia os registros tratados para o Supabase
                     const { error: errReg } = await supabase
                         .from('registros_ponto')
                         .insert(registrosFormatados);
 
-                    // Importa as chaves extras de aprovação se contiver no backup
                     if(dados.extras_aprovadas) {
                         const chavesExtras = Object.keys(dados.extras_aprovadas);
                         for(let dataKey of chavesExtras) {
                             await supabase.from('extras_aprovadas').upsert({
                                 data: dataKey,
                                 usuario: usuarioLogado,
-                                approved: dados.extras_aprovadas[dataKey]
+                                aprovado: dados.extras_aprovadas[dataKey]
                             }, { onConflict: 'data,usuario' });
                         }
                     }
@@ -902,13 +918,13 @@
                         alert("❌ Ocorreu um erro ao persistir dados na nuvem.");
                         console.error(errReg);
                     } else {
-                        alert("🎉 Seu histórico antigo foi migrado com sucesso para o Supabase!");
+                        alert("🎉 Seu histórico antigo com imagens foi migrado com sucesso!");
                         await carregarDadosDoSupabase();
                     }
                 }
             }
         } catch(err) {
-            alert("❌ Falha na leitura! O arquivo enviado é inválido ou incompatível.");
+            alert("❌ Falha na leitura! O arquivo enviado é inválido.");
             console.error(err);
         }
     };
