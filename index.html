@@ -24,7 +24,6 @@
             align-items: center;
         }
 
-        /* Área do Sistema (Escondida antes do Login) */
         #conteudo-sistema {
             display: none;
             width: 100%;
@@ -51,7 +50,6 @@
             gap: 0.5rem;
         }
 
-        /* Telas de Autenticação */
         .auth-box {
             background: #ffffff;
             padding: 2.5rem;
@@ -60,15 +58,18 @@
             width: 100%;
             max-width: 400px;
         }
+
         .auth-box h2 {
             border: none;
             text-align: center;
             justify-content: center;
             margin-bottom: 2rem;
         }
+
         .form-group {
             margin-bottom: 1.25rem;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
@@ -76,6 +77,7 @@
             font-weight: 500;
             color: #475569;
         }
+
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -86,6 +88,7 @@
             background: #f8fafc;
             transition: all 0.2s;
         }
+
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
             border-color: #3b82f6;
@@ -109,6 +112,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .btn:hover { background: #2563eb; }
         .btn-secondary { background: #64748b; }
         .btn-secondary:hover { background: #475569; }
@@ -124,14 +128,15 @@
             font-size: 0.875rem;
             color: #64748b;
         }
+
         .toggle-auth a {
             color: #3b82f6;
             text-decoration: none;
             font-weight: 600;
         }
+
         .toggle-auth a:hover { text-decoration: underline; }
 
-        /* Painel Superior / Boas-vindas */
         .header-painel {
             display: flex;
             justify-content: space-between;
@@ -144,10 +149,10 @@
             width: 100%;
             max-width: 850px;
         }
+
         .user-info h3 { color: #0f172a; font-size: 1.25rem; }
         .user-info p { color: #64748b; font-size: 0.875rem; }
 
-        /* Grid de Ações */
         .grid-botoes {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -155,7 +160,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Lista de Registros */
         .item-registro {
             padding: 1rem;
             border: 1px solid #e2e8f0;
@@ -166,9 +170,10 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .item-registro.abono { border-left: 5px solid #f59e0b; }
         .item-registro.ponto { border-left: 5px solid #3b82f6; }
-        
+
         .badge {
             padding: 0.25rem 0.5rem;
             border-radius: 6px;
@@ -176,16 +181,17 @@
             font-weight: 700;
             text-transform: uppercase;
         }
+
         .badge-ponto { background: #dbeafe; color: #1e40af; }
         .badge-abono { background: #fef3c7; color: #92400e; }
 
-        /* Resumo de Horas */
         .painel-horas {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.5rem;
             margin-top: 1.5rem;
         }
+
         .card-hora {
             background: #f8fafc;
             padding: 1.25rem;
@@ -193,6 +199,7 @@
             border: 1px solid #e2e8f0;
             text-align: center;
         }
+
         .card-hora h4 { font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem; }
         .card-hora p { font-size: 1.75rem; font-weight: 700; color: #0f172a; }
         .card-hora.positivo p { color: #10b981; }
@@ -206,9 +213,9 @@
             align-items: center;
             gap: 0.25rem;
         }
+
         .comprovante-link:hover { text-decoration: underline; }
 
-        /* Estilos do Modal de Detalhes */
         .modal {
             display: none;
             position: fixed;
@@ -219,6 +226,7 @@
             z-index: 1000;
             padding: 1rem;
         }
+
         .modal-content {
             background: #ffffff;
             padding: 2rem;
@@ -228,12 +236,14 @@
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
             position: relative;
         }
+
         .fechar-modal {
             position: absolute;
             top: 1rem; right: 1rem;
             background: none; border: none;
             font-size: 1.5rem; cursor: pointer; color: #94a3b8;
         }
+
         .fechar-modal:hover { color: #475569; }
 
         .checkbox-container {
@@ -243,6 +253,7 @@
             margin-top: 1rem;
             font-weight: 500;
         }
+
         .checkbox-container input { width: auto; }
     </style>
 </head>
@@ -317,14 +328,14 @@
                     </div>
                     <div class="form-group">
                         <label>Classificação</label>
-                        <select id="reg-classificacao" required onchange="ajustarCamposClassificacao()">
+                        <select id="reg-classificacao" required>
                             <option value="ponto">Ponto Padrão</option>
                             <option value="abono">Abono / Justificativa</option>
                         </select>
                     </div>
                 </div>
 
-                <div id="campo-comprovante" class="form-group">
+                <div class="form-group">
                     <label>Comprovante Eletrônico (Imagem ou PDF)</label>
                     <input type="file" id="reg-comprovante" accept="image/*,application/pdf">
                 </div>
@@ -341,8 +352,7 @@
         <div class="container">
             <h2>📅 Histórico de Atividades Realizadas</h2>
             
-            <div id="lista-registros-ponto">
-                </div>
+            <div id="lista-registros-ponto"></div>
 
             <div class="painel-horas">
                 <div class="card-hora">
@@ -399,24 +409,21 @@
     </div>
 
     <script>
-        // CONFIGURAÇÕES DE ACESSO DO SUPABASE
+        // CONFIGURAÇÕES DO SUPABASE
         const SUPABASE_URL = 'https://lwyasbxiznppnlebvryo.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS';
 
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // VARIÁVEIS DE SESSÃO DO SISTEMA
         let usuarioLogado = null;
         let listaRegistros = [];
-        let extrasAprovadas = {}; // Mapeamento de data -> boolean
+        let extrasAprovadas = {};
         let configSaldo = { sinal: '+', valor: '00:00' };
 
-        // Elementos globais do DOM
         document.getElementById('form-login').addEventListener('submit', realizarLogin);
         document.getElementById('form-cadastro').addEventListener('submit', realizarCadastro);
         document.getElementById('form-registro').addEventListener('submit', salvarNovoRegistro);
         
-        // Define data atual padrão no formulário
         document.getElementById('reg-data').value = new Date().toISOString().split('T')[0];
 
         function alternarTelas(esconderId, mostrarId) {
@@ -424,17 +431,6 @@
             document.getElementById(mostrarId).style.display = 'block';
         }
 
-        function ajustarCamposClassificacao() {
-            const tipo = document.getElementById('reg-classificacao').value;
-            const campoComp = document.getElementById('campo-comprovante');
-            if (tipo === 'abono') {
-                campoComp.style.display = 'block';
-            } else {
-                campoComp.style.display = 'block'; // mantém visível se quiser anexar em pontos normais
-            }
-        }
-
-        // --- SISTEMA DE AUTENTICAÇÃO VIA SUPABASE ---
         async function realizarCadastro(e) {
             e.preventDefault();
             const usuario = document.getElementById('cadastro-usuario').value.trim().toLowerCase();
@@ -445,18 +441,14 @@
                 return;
             }
 
-            // Cria o perfil na tabela dedicada do banco remoto
             const { error } = await supabase
                 .from('perfis_usuarios')
                 .insert([{ usuario, senha }]);
 
             if (error) {
                 alert("❌ Erro ao cadastrar. Usuário pode já estar em uso.");
-                console.error(error);
             } else {
                 alert("🎉 Cadastro efetuado com sucesso! Faça seu login.");
-                document.getElementById('cadastro-usuario').value = '';
-                document.getElementById('cadastro-senha').value = '';
                 alternarTelas('tela-cadastro', 'tela-login');
             }
         }
@@ -487,7 +479,7 @@
             }
         }
 
-        function Logout() {
+        function fazerLogout() {
             usuarioLogado = null;
             listaRegistros = [];
             extrasAprovadas = {};
@@ -499,38 +491,32 @@
             document.getElementById('tela-login').style.display = 'none';
             document.getElementById('conteudo-sistema').style.display = 'block';
             document.getElementById('boas-vindas-user').innerText = `Olá, ${usuarioLogado.toUpperCase()}`;
-            
             await carregarDadosDoSupabase();
         }
 
-        // --- MANIPULAÇÃO DE DADOS COM O SUPABASE ---
         async function carregarDadosDoSupabase() {
-            // 1. Busca os registros de ponto do usuário ativo
-            const { data: registros, error: errReg } = await supabase
+            const { data: registros } = await supabase
                 .from('registros_ponto')
                 .select('*')
                 .eq('usuario', usuarioLogado)
                 .order('data', { ascending: false });
 
-            // 2. Busca as horas extras aprovadas do usuário ativo
-            const { data: extras, error: errExt } = await supabase
+            const { data: extras } = await supabase
                 .from('extras_aprovadas')
                 .select('*')
                 .eq('usuario', usuarioLogado);
 
-            if (!errReg && registros) listaRegistros = registros;
+            if (registros) listaRegistros = registros;
             
             extrasAprovadas = {};
-            if (!errExt && extras) {
+            if (extras) {
                 extras.forEach(e => {
                     extrasAprovadas[e.data] = e.aprovado;
                 });
             }
-
             renderizarRegistros();
         }
 
-        // Conversor auxiliar para transformar arquivos em String Base64 para envio seguro
         function lerArquivoBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -569,10 +555,7 @@
                 .from('registros_ponto')
                 .insert([novoReg]);
 
-            if(error) {
-                alert("❌ Falha ao tentar salvar o registro remoto.");
-                console.error(error);
-            } else {
+            if(!error) {
                 document.getElementById('reg-horario').value = '';
                 document.getElementById('reg-observacao').value = '';
                 document.getElementById('reg-comprovante').value = '';
@@ -580,92 +563,33 @@
             }
         }
 
-        async function salvarConfiguracaoSaldo() {
-            const sinal = document.getElementById('cfg-sinal').value;
-            const valor = document.getElementById('cfg-valor').value.trim();
-
-            if(!/^\d{2,4}:\d{2}$/.test(valor)) {
-                alert("⚠️ Insira o formato válido de horas para o cálculo (HH:MM).");
-                return;
-            }
-
-            const { error } = await supabase
-                .from('perfis_usuarios')
-                .update({ config_sinal: sinal, config_valor: valor })
-                .eq('usuario', usuarioLogado);
-
-            if(error) {
-                alert("❌ Falha ao salvar definições de saldo.");
-            } else {
-                configSaldo.sinal = sinal;
-                configSaldo.valor = valor;
-                alert("✅ Parâmetros de saldo atualizados.");
-                renderizarRegistros();
-            }
-        }
-
-        async function deletarRegistroIndividual(id, dataAgrupada) {
-            if(confirm("Deseja realmente remover permanentemente este registro de ponto?")) {
-                const { error } = await supabase
-                    .from('registros_ponto')
-                    .delete()
-                    .eq('id', id);
-
-                if(!error) {
-                    fecharModal();
-                    await carregarDadosDoSupabase();
-                } else {
-                    alert("Erro ao excluir do servidor.");
-                }
-            }
-        }
-
-        async function alternarAprovacaoHoraExtra(data, statusAnterior) {
-            const novoStatus = !statusAnterior;
-            
-            const { error } = await supabase
-                .from('extras_aprovadas')
-                .upsert({ data, usuario: usuarioLogado, aprovado: novoStatus }, { onConflict: 'data,usuario' });
-
-            if(!error) {
-                fecharModal();
-                await carregarDadosDoSupabase();
-            } else {
-                alert("Erro ao alterar aprovação de hora extra.");
-            }
-        }
-
-        // --- RENDERIZAÇÃO E CÁLCULO DE HORAS (FRONT-END) ---
         function formatarDataBR(dataIso) {
-			if (!dataIso) return "00/00/0000";
-			const partes = dataIso.split('-');
-			if (partes.length < 3) return dataIso;
-			return `${partes[2]}/${partes[1]}/${partes[0]}`;
-		}
+            if (!dataIso) return "00/00/0000";
+            const partes = dataIso.split('-');
+            if (partes.length < 3) return dataIso;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
 
         function renderizarRegistros() {
             const container = document.getElementById('lista-registros-ponto');
             container.innerHTML = '';
 
             if (listaRegistros.length === 0) {
-                container.innerHTML = '<p style="color:#64748b; text-align:center; padding:1rem;">Nenhum ponto registrado até o momento.</p>';
+                container.innerHTML = '<p style="color:#64748b; text-align:center; padding:1rem;">Nenhum ponto registrado.</p>';
                 calcularSaldoFinal();
                 return;
             }
 
-            // Agrupa por data correspondente
             const grupos = {};
             listaRegistros.forEach(r => {
                 if (!grupos[r.data]) grupos[r.data] = [];
                 grupos[r.data].push(r);
             });
 
-            // Ordena as chaves de data de forma decrescente
             const datasOrdenadas = Object.keys(grupos).sort((a,b) => b.localeCompare(a));
 
             datasOrdenadas.forEach(data => {
                 const itens = grupos[data];
-                // Ordena por horário crescente
                 itens.sort((a,b) => a.horario.localeCompare(b.horario));
 
                 const divData = document.createElement('div');
@@ -680,8 +604,7 @@
                 titulo.style.justifyContent = 'space-between';
                 titulo.innerHTML = `<span>📅 ${formatarDataBR(data)}</span>`;
 
-                const isAprovada = extrasAprovadas[data] || false;
-                if(isAprovada) {
+                if(extrasAprovadas[data]) {
                     titulo.innerHTML += ` <span class="badge" style="background:#d1fae5; color:#065f46;">⭐ Extra Aprovada</span>`;
                 }
 
@@ -691,10 +614,7 @@
                     const itemDiv = document.createElement('div');
                     itemDiv.className = `item-registro ${item.tipo_lancamento}`;
                     
-                    let htmlComp = '';
-                    if(item.comprovante_url) {
-                        htmlComp = `<span style="font-size:1.1rem;">📎</span>`;
-                    }
+                    let htmlComp = item.comprovante_url ? `<span style="font-size:1.1rem;">📎</span>` : '';
 
                     itemDiv.innerHTML = `
                         <div>
@@ -713,70 +633,99 @@
             calcularSaldoFinal();
         }
 
+        // FUNÇÃO DE DETALHES COMPATÍVEL COM AS IMAGENS DO BACKUP E DO LAYOUT
         function abrirDetalhes(id) {
-    const item = listaRegistros.find(r => r.id === id);
-    if(!item) return;
+            const item = listaRegistros.find(r => r.id === id);
+            if(!item) return;
 
-    const modalCorpo = document.getElementById('modal-corpo');
-    const modalAcao = document.getElementById('modal-acao-extra');
-    
-    let linkComp = '<i>Nenhum anexo fornecido</i>';
-    
-    // Se existir o comprovante (seja URL ou String Base64)
-    if(item.comprovante_url) {
-        if(item.comprovante_url.startsWith('data:image/') || item.comprovante_url.startsWith('data:target')) {
-            // Se for uma imagem, mostra uma miniatura dela no modal
-            linkComp = `
-                <p style="margin-bottom: 0.5rem;"><strong>Comprovante Anexo:</strong></p>
-                <img src="${item.comprovante_url}" alt="Comprovante" style="width:100%; max-height:250px; object-fit:contain; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:0.5rem;"/>
-                <br/>
-                <a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar em tamanho real ↗</a>
+            const modalCorpo = document.getElementById('modal-corpo');
+            const modalAcao = document.getElementById('modal-acao-extra');
+            
+            let linkComp = '<i>Nenhum anexo fornecido</i>';
+            
+            if(item.comprovante_url) {
+                if(item.comprovante_url.startsWith('data:image/') || item.comprovante_url.startsWith('data:target') || item.comprovante_url.startsWith('data:application/octet-stream')) {
+                    linkComp = `
+                        <p style="margin-bottom: 0.5rem;"><strong>Comprovante Anexo:</strong></p>
+                        <img src="${item.comprovante_url}" alt="Comprovante" style="width:100%; max-height:250px; object-fit:contain; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:0.5rem;"/>
+                        <br/>
+                        <a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar em tamanho real ↗</a>
+                    `;
+                } else {
+                    linkComp = `<a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar Comprovante Anexo ↗</a>`;
+                }
+            }
+
+            modalCorpo.innerHTML = `
+                <p><strong>Classificação:</strong> ${item.tipo_lancamento.toUpperCase()}</p>
+                <p><strong>Data:</strong> ${formatarDataBR(item.data)} às ${item.horario}</p>
+                <p><strong>Evento:</strong> ${item.tipo}</p>
+                <p><strong>Notas:</strong> ${item.observacao || 'Nenhuma observação informada.'}</p>
+                <div style="margin-top:1rem; padding: 0.75rem; background:#f1f5f9; border-radius:8px;">${linkComp}</div>
             `;
-        } else {
-            // Se for outro tipo de arquivo (como PDF em Base64 ou link)
-            linkComp = `<a href="${item.comprovante_url}" target="_blank" class="comprovante-link">Visualizar Comprovante Anexo (PDF/Arquivo) ↗</a>`;
+
+            const statusAprovacao = extrasAprovadas[item.data] || false;
+
+            modalAcao.innerHTML = `
+                <div class="checkbox-container">
+                    <input type="checkbox" id="chk-aprovacao-modal" ${statusAprovacao ? 'checked' : ''} onchange="alternarAprovacaoHoraExtra('${item.data}', ${statusAprovacao})">
+                    <label for="chk-aprovacao-modal">Aprovar banco/hora extra deste dia</label>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-danger" onclick="deletarRegistroIndividual('${item.id}')">Excluir Ponto</button>
+                </div>
+            `;
+
+            document.getElementById('modal-detalhes').style.display = 'flex';
         }
-    }
-
-    modalCorpo.innerHTML = `
-        <p><strong>Classificação:</strong> ${item.tipo_lancamento.toUpperCase()}</p>
-        <p><strong>Data:</strong> ${formatarDataBR(item.data)} às ${item.horario}</p>
-        <p><strong>Evento:</strong> ${item.tipo}</p>
-        <p><strong>Notas:</strong> ${item.observacao || 'Nenhuma observação informada.'}</p>
-        <div style="margin-top:1rem; padding: 0.75rem; background:#f1f5f9; border-radius:8px;">${linkComp}</div>
-    `;
-
-    const statusAprovacao = extrasAprovadas[item.data] || false;
-
-    modalAcao.innerHTML = `
-        <div class="checkbox-container">
-            <input type="checkbox" id="chk-aprovacao-modal" ${statusAprovacao ? 'checked' : ''} onchange="alternarAprovacaoHoraExtra('${item.data}', ${statusAprovacao})">
-            <label for="chk-aprovacao-modal">Aprovar banco/hora extra deste dia</label>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-danger" onclick="deletarRegistroIndividual('${item.id}', '${item.data}')">Excluir Ponto</button>
-        </div>
-    `;
-
-    document.getElementById('modal-detalhes').style.display = 'flex';
-}
 
         function fecharModal() {
             document.getElementById('modal-detalhes').style.display = 'none';
         }
 
-        // Lógica de cálculo idêntica à do seu sistema inteligente MVF5
+        async function alternarAprovacaoHoraExtra(data, statusAnterior) {
+            const { error } = await supabase
+                .from('extras_aprovadas')
+                .upsert({ data, usuario: usuarioLogado, aprovado: !statusAnterior }, { onConflict: 'data,usuario' });
+
+            if(!error) { fecharModal(); await carregarDadosDoSupabase(); }
+        }
+
+        async function deletarRegistroIndividual(id) {
+            if(confirm("Deseja realmente remover permanentemente este registro de ponto?")) {
+                const { error } = await supabase.from('registros_ponto').delete().eq('id', id);
+                if(!error) { fecharModal(); await carregarDadosDoSupabase(); }
+            }
+        }
+
+        async function salvarConfiguracaoSaldo() {
+            const sinal = document.getElementById('cfg-sinal').value;
+            const valor = document.getElementById('cfg-valor').value.trim();
+
+            if(!/^\d{2,4}:\d{2}$/.test(valor)) {
+                alert("⚠️ Insira o formato válido de horas (HH:MM).");
+                return;
+            }
+
+            const { error } = await supabase
+                .from('perfis_usuarios')
+                .update({ config_sinal: sinal, config_valor: valor })
+                .eq('usuario', usuarioLogado);
+
+            if(!error) {
+                configSaldo.sinal = sinal; configSaldo.valor = valor;
+                alert("✅ Parâmetros de saldo atualizados.");
+                renderizarRegistros();
+            }
+        }
+
         function calcularSaldoFinal() {
             let totalMinutosSaldo = 0;
-
-            // Extrai saldo inicial padrão
             const partesConfig = configSaldo.valor.split(':');
             let minutosIniciais = (parseInt(partesConfig[0], 10) * 60) + parseInt(partesConfig[1], 10);
             if(configSaldo.sinal === '-') minutosIniciais = -minutosIniciais;
-
             totalMinutosSaldo += minutosIniciais;
 
-            // Agrupando para cálculo diário
             const grupos = {};
             listaRegistros.forEach(r => {
                 if(!grupos[r.data]) grupos[r.data] = [];
@@ -786,59 +735,38 @@
             Object.keys(grupos).forEach(data => {
                 const itens = grupos[data];
                 const aprovada = extrasAprovadas[data] || false;
-
-                // Conta abonos válidos
                 let minutosAbonados = 0;
                 const pontosNormais = [];
 
                 itens.forEach(i => {
-                    if(i.tipo_lancamento === 'abono') {
-                        minutosAbonados += 480; // Abona o dia padrão (8 horas)
-                    } else {
-                        pontosNormais.push(i);
-                    }
+                    if(i.tipo_lancamento === 'abono') minutosAbonados += 480;
+                    else pontosNormais.push(i);
                 });
 
-                if (minutosAbonados > 0) {
-                    totalMinutosSaldo += 0; // Calculado como dia neutro pago
-                    return;
-                }
+                if (minutosAbonados > 0) return;
 
-                // Ordena horários do dia
                 pontosNormais.sort((a,b) => a.horario.localeCompare(b.horario));
-
                 let minutosTrabalhados = 0;
                 for(let i = 0; i < pontosNormais.length; i += 2) {
                     if(pontosNormais[i] && pontosNormais[i+1]) {
-                        const m1 = converterHoraParaMinutos(pontosNormais[i].horario);
-                        const m2 = converterHoraParaMinutos(pontosNormais[i+1].horario);
-                        minutosTrabalhados += (m2 - m1);
+                        minutosTrabalhados += (converterHoraParaMinutos(pontosNormais[i+1].horario) - converterHoraParaMinutos(pontosNormais[i].horario));
                     }
                 }
 
                 if(minutosTrabalhados > 0) {
-                    const saldoDoDia = minutosTrabalhados - 480; // Compara com 8h
-                    if(saldoDoDia > 0) {
-                        if(aprovada) totalMinutosSaldo += saldoDoDia;
-                    } else {
-                        totalMinutosSaldo += saldoDoDia; // Desconta horas negativas
-                    }
+                    const saldoDoDia = minutosTrabalhados - 480;
+                    if(saldoDoDia > 0) { if(aprovada) totalMinutosSaldo += saldoDoDia; }
+                    else totalMinutosSaldo += saldoDoDia;
                 }
             });
 
-            // Apresenta na UI o saldo tratado em formato HH:MM
             const sinalFinal = totalMinutosSaldo >= 0 ? '+' : '-';
             const minutosAbsolutos = Math.abs(totalMinutosSaldo);
-            const horas = Math.floor(minutosAbsolutos / 60);
-            const minutos = minutosAbsolutos % 60;
-            const strHoras = String(horas).padStart(2, '0');
-            const strMinutos = String(minutos).padStart(2, '0');
+            const strHoras = String(Math.floor(minutosAbsolutos / 60)).padStart(2, '0');
+            const strMinutos = String(minutosAbsolutos % 60).padStart(2, '0');
 
-            const txtSaldo = document.getElementById('txt-saldo-acumulado');
-            const cardBanco = document.getElementById('card-banco');
-
-            txtSaldo.innerText = `${sinalFinal}${strHoras}:${strMinutos}`;
-            cardBanco.className = `card-hora ${totalMinutosSaldo >= 0 ? 'positivo' : 'negativo'}`;
+            document.getElementById('txt-saldo-acumulado').innerText = `${sinalFinal}${strHoras}:${strMinutos}`;
+            document.getElementById('card-banco').className = `card-hora ${totalMinutosSaldo >= 0 ? 'positivo' : 'negativo'}`;
         }
 
         function converterHoraParaMinutos(horarioStr) {
@@ -846,105 +774,91 @@
             return (parseInt(p[0], 10) * 60) + parseInt(p[1], 10);
         }
 
-        // --- SISTEMA DE BACKUP E MIGRAÇÃO DE DADOS ---
         function exportarBackupJSON() {
-            const payload = {
-                payload: listaRegistros,
-                extras_aprovadas: extrasAprovadas
-            };
+            const payload = { payload: listaRegistros, extras_aprovadas: extrasAprovadas };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `backup_ponto_supabase_${usuarioLogado}.json`);
+            dlAnchorElem.setAttribute("download", `backup_ponto_${usuarioLogado}.json`);
             dlAnchorElem.click();
         }
 
-        // Método chave para puxar seu JSON antigo para a Nuvem!
+        // IMPORTAÇÃO SUPORTANDO O FORMATO DO SEU BACKUP ORIGINAL DA MVF5
         function importarBackupJSON(event) {
-    const arquivo = event.target.files[0];
-    if (!arquivo) return;
+            const arquivo = event.target.files[0];
+            if (!arquivo) return;
 
-    const leitor = new FileReader();
-    leitor.onload = async function(e) {
-        try {
-            const dados = JSON.parse(e.target.result);
-            
-            if (dados && (dados.payload || Array.isArray(dados))) {
-                const registrosParaImportar = Array.isArray(dados) ? dados : dados.payload;
-                
-                if(confirm(`Localizamos registros neste arquivo. Deseja importá-los para a conta de ${usuarioLogado.toUpperCase()} no Supabase?`)) {
-                    
-                    const registrosFormatados = registrosParaImportar
-                        .filter(r => r && (r.data || r.horario))
-                        .map(r => {
-                            let dataTratada = r.data ? r.data.split('T')[0] : new Date().toISOString().split('T')[0];
+            const leitor = new FileReader();
+            leitor.onload = async function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    if (dados && (dados.payload || Array.isArray(dados))) {
+                        const registrosParaImportar = Array.isArray(dados) ? dados : dados.payload;
+                        
+                        if(confirm(`Deseja importar os registros para o usuário ${usuarioLogado.toUpperCase()}?`)) {
                             
-                            // Recupera o comprovante caso ele tenha vindo como string Base64 ou campo antigo
-                            let compUrl = null;
-                            if (typeof r.comprovante_url === 'string') {
-                                compUrl = r.comprovante_url;
-                            } else if (typeof r.comprovante === 'string') {
-                                compUrl = r.comprovante;
+                            const registrosFormatados = registrosParaImportar
+                                .filter(r => r && (r.data || r.horario))
+                                .map(r => {
+                                    let dataTratada = r.data ? r.data.split('T')[0] : new Date().toISOString().split('T')[0];
+                                    
+                                    // Resgata o comprovante seja do campo .comprovante_url ou do original .comprovante do IndexedDB
+                                    let compUrl = null;
+                                    if (typeof r.comprovante_url === 'string') {
+                                        compUrl = r.comprovante_url;
+                                    } else if (typeof r.comprovante === 'string') {
+                                        // Caso o arquivo tenha vindo como string base64 pura no campo original
+                                        compUrl = r.comprovante.startsWith('data:') ? r.comprovante : `data:image/jpeg;base64,${r.comprovante}`;
+                                    }
+
+                                    return {
+                                        id: r.id || 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                        usuario: usuarioLogado,
+                                        data: dataTratada,
+                                        horario: r.horario || "00:00",
+                                        tipo: r.tipo || "Entrada 1",
+                                        tipo_lancamento: r.tipo_lancamento || "ponto",
+                                        observacao: r.observacao || "",
+                                        comprovante_url: compUrl
+                                    };
+                                });
+
+                            // Insere os registros no Supabase
+                            const { error: errReg } = await supabase
+                                .from('registros_ponto')
+                                .insert(registrosFormatados);
+
+                            if(dados.extras_aprovadas) {
+                                const chavesExtras = Object.keys(dados.extras_aprovadas);
+                                for(let dataKey of chavesExtras) {
+                                    await supabase.from('extras_aprovadas').upsert({
+                                        data: dataKey,
+                                        usuario: usuarioLogado,
+                                        aprovado: dados.extras_aprovadas[dataKey]
+                                    }, { onConflict: 'data,usuario' });
+                                }
                             }
 
-                            return {
-                                id: r.id || 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                                usuario: usuarioLogado,
-                                data: dataTratada,
-                                horario: r.horario || "00:00",
-                                tipo: r.tipo || "Entrada 1",
-                                tipo_lancamento: r.tipo_lancamento || "ponto",
-                                observacao: r.observacao || "",
-                                comprovante_url: compUrl
-                            };
-                        });
-
-                    const { error: errReg } = await supabase
-                        .from('registros_ponto')
-                        .insert(registrosFormatados);
-
-                    if(dados.extras_aprovadas) {
-                        const chavesExtras = Object.keys(dados.extras_aprovadas);
-                        for(let dataKey of chavesExtras) {
-                            await supabase.from('extras_aprovadas').upsert({
-                                data: dataKey,
-                                usuario: usuarioLogado,
-                                aprovado: dados.extras_aprovadas[dataKey]
-                            }, { onConflict: 'data,usuario' });
+                            if(errReg) {
+                                alert("❌ Erro ao enviar os dados.");
+                            } else {
+                                alert("🎉 Histórico e fotos importados com sucesso para o Supabase!");
+                                await carregarDadosDoSupabase();
+                            }
                         }
                     }
-
-                    if(errReg) {
-                        alert("❌ Ocorreu um erro ao persistir dados na nuvem.");
-                        console.error(errReg);
-                    } else {
-                        alert("🎉 Seu histórico antigo com imagens foi migrado com sucesso!");
-                        await carregarDadosDoSupabase();
-                    }
+                } catch(err) {
+                    alert("❌ Falha na leitura do arquivo.");
                 }
-            }
-        } catch(err) {
-            alert("❌ Falha na leitura! O arquivo enviado é inválido.");
-            console.error(err);
+            };
+            leitor.readAsText(arquivo);
         }
-    };
-    leitor.readAsText(arquivo);
-}
 
         async function limparTudoComSeguranca() {
-            if(confirm("⚠️ ATENÇÃO: Isso excluirá PERMANENTEMENTE todos os seus registros salvos na Nuvem para este usuário. Confirmar?")) {
-                const { error } = await supabase
-                    .from('registros_ponto')
-                    .delete()
-                    .eq('usuario', usuarioLogado);
-
-                if(!error) {
-                    await supabase.from('extras_aprovadas').delete().eq('usuario', usuarioLogado);
-                    alert("Banco de dados limpo.");
-                    await carregarDadosDoSupabase();
-                } else {
-                    alert("Erro ao limpar dados do servidor.");
-                }
+            if(confirm("⚠️ Excluir permanentemente todos os registros do usuário na Nuvem?")) {
+                await supabase.from('registros_ponto').delete().eq('usuario', usuarioLogado);
+                await supabase.from('extras_aprovadas').delete().eq('usuario', usuarioLogado);
+                await carregarDadosDoSupabase();
             }
         }
     </script>
