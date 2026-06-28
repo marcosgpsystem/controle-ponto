@@ -492,14 +492,16 @@
             </div>
         </div>
     </div>
-
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ==========================================
         // CONFIGURAÇÕES DO SUPABASE (PREENCHA AQUI)
         // ==========================================
+     
         const SUPABASE_URL = 'https://lwyasbxiznppnlebvryo.supabase.co';
-		const SUPABASE_KEY = 'sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS';
-		
+        const SUPABASE_KEY = 'sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS';
+        
+        // Agora o navegador vai entender o que é "supabase" abaixo:
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const KEY_CONFIG_PREFIX = 'ponto_supabase_config_'; 
