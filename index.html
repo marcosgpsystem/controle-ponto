@@ -637,9 +637,11 @@
 
         // --- RENDERIZAÇÃO E CÁLCULO DE HORAS (FRONT-END) ---
         function formatarDataBR(dataIso) {
-            const partes = dataIso.split('-');
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
-        }
+			if (!dataIso) return "00/00/0000";
+			const partes = dataIso.split('-');
+			if (partes.length < 3) return dataIso;
+			return `${partes[2]}/${partes[1]}/${partes[0]}`;
+		}
 
         function renderizarRegistros() {
             const container = document.getElementById('lista-registros-ponto');
@@ -846,64 +848,72 @@
 
         // Método chave para puxar seu JSON antigo para a Nuvem!
         function importarBackupJSON(event) {
-            const arquivo = event.target.files[0];
-            if (!arquivo) return;
+    const arquivo = event.target.files[0];
+    if (!arquivo) return;
 
-            const leitor = new FileReader();
-            leitor.onload = async function(e) {
-                try {
-                    const dados = JSON.parse(e.target.result);
+    const leitor = new FileReader();
+    leitor.onload = async function(e) {
+        try {
+            const dados = JSON.parse(e.target.result);
+            
+            if (dados && (dados.payload || Array.isArray(dados))) {
+                const registrosParaImportar = Array.isArray(dados) ? dados : dados.payload;
+                
+                if(confirm(`Localizamos registros neste arquivo. Deseja importá-los para a conta de ${usuarioLogado.toUpperCase()} no Supabase?`)) {
                     
-                    // Validação estrutural básica de compatibilidade
-                    if (dados && (dados.payload || Array.isArray(dados))) {
-                        const registrosParaImportar = Array.isArray(dados) ? dados : dados.payload;
-                        
-                        if(confirm(`Localizamos registros neste arquivo. Deseja importá-los para a conta de ${usuarioLogado.toUpperCase()} no Supabase?`)) {
+                    // Tratamento e limpeza preventiva dos dados antes do upload
+                    const registrosFormatados = registrosParaImportar
+                        .filter(r => r && (r.data || r.horario)) // Descarta linhas totalmente vazias se houver
+                        .map(r => {
+                            // Se a data veio em formato completo de Timestamp/ISO, pega apenas o YYYY-MM-DD
+                            let dataTratada = r.data ? r.data.split('T')[0] : new Date().toISOString().split('T')[0];
                             
-                            // Ajusta o usuário logado em cada linha antes do envio
-                            const registrosFormatados = registrosParaImportar.map(r => {
-                                const cópia = { ...r, usuario: usuarioLogado };
-                                // Se o comprovante for do tipo estrutural antigo Blob, o código converte para Base64
-                                if (cópia.comprovante && typeof cópia.comprovante === 'object') {
-                                    delete cópia.comprovante; // Remove inconsistência de formato antigo se aplicável
-                                }
-                                if(cópia.isBlob) delete cópia.isBlob;
-                                return cópia;
-                            });
+                            const copia = {
+                                id: r.id || 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                usuario: usuarioLogado,
+                                data: dataTratada,
+                                horario: r.horario || "00:00",
+                                tipo: r.tipo || "Entrada 1",
+                                tipo_lancamento: r.tipo_lancamento || "ponto",
+                                observacao: r.observacao || "",
+                                comprovante_url: typeof r.comprovante === 'string' && r.comprovante.startsWith('data:') ? r.comprovante : null
+                            };
+                            return copia;
+                        });
 
-                            // Envia em lote de forma otimizada para a tabela remota
-                            const { error: errReg } = await supabase
-                                .from('registros_ponto')
-                                .insert(registrosFormatados);
+                    // Envia os registros tratados para o Supabase
+                    const { error: errReg } = await supabase
+                        .from('registros_ponto')
+                        .insert(registrosFormatados);
 
-                            // Importa as chaves extras de aprovação se contiver no backup
-                            if(dados.extras_aprovadas) {
-                                const chavesExtras = Object.keys(dados.extras_aprovadas);
-                                for(let dataKey of chavesExtras) {
-                                    await supabase.from('extras_aprovadas').upsert({
-                                        data: dataKey,
-                                        usuario: usuarioLogado,
-                                        aprovado: dados.extras_aprovadas[dataKey]
-                                    }, { onConflict: 'data,usuario' });
-                                }
-                            }
-
-                            if(errReg) {
-                                alert("❌ Ocorreu um erro ao persistir dados na nuvem.");
-                                console.error(errReg);
-                            } else {
-                                alert("🎉 Histórico migrado e salvo com sucesso no Supabase!");
-                                await carregarDadosDoSupabase();
-                            }
+                    // Importa as chaves extras de aprovação se contiver no backup
+                    if(dados.extras_aprovadas) {
+                        const chavesExtras = Object.keys(dados.extras_aprovadas);
+                        for(let dataKey of chavesExtras) {
+                            await supabase.from('extras_aprovadas').upsert({
+                                data: dataKey,
+                                usuario: usuarioLogado,
+                                approved: dados.extras_aprovadas[dataKey]
+                            }, { onConflict: 'data,usuario' });
                         }
                     }
-                } catch(err) {
-                    alert("❌ Falha na leitura! O arquivo enviado é inválido ou incompatível.");
-                    console.error(err);
+
+                    if(errReg) {
+                        alert("❌ Ocorreu um erro ao persistir dados na nuvem.");
+                        console.error(errReg);
+                    } else {
+                        alert("🎉 Seu histórico antigo foi migrado com sucesso para o Supabase!");
+                        await carregarDadosDoSupabase();
+                    }
                 }
-            };
-            leitor.readAsText(arquivo);
+            }
+        } catch(err) {
+            alert("❌ Falha na leitura! O arquivo enviado é inválido ou incompatível.");
+            console.error(err);
         }
+    };
+    leitor.readAsText(arquivo);
+}
 
         async function limparTudoComSeguranca() {
             if(confirm("⚠️ ATENÇÃO: Isso excluirá PERMANENTEMENTE todos os seus registros salvos na Nuvem para este usuário. Confirmar?")) {
