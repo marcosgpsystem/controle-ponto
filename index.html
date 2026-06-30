@@ -549,7 +549,8 @@
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // CORREÇÃO AQUI: Alterado o nome da constante para evitar o conflito com a biblioteca global
+         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const KEY_SESSION = 'ponto_inteligente_session'; 
         let configAnterior = { sinal: "+", valor: "00:00" };
@@ -582,10 +583,11 @@
 
             if(!user || !senha) return alert("Preencha todos os campos do cadastro!");
 
-            const { data: existente } = await supabase.from('perfis_usuarios').select('usuario').eq('usuario', user.toLowerCase()).maybeSingle();
+            // Atualizado para usar supabaseClient
+            const { data: existente } = await supabaseClient.from('perfis_usuarios').select('usuario').eq('usuario', user.toLowerCase()).maybeSingle();
             if(existente) return alert("Este usuário já existe!");
 
-            const { error } = await supabase.from('perfis_usuarios').insert([{ usuario: user.toLowerCase(), senha: senha }]);
+            const { error } = await supabaseClient.from('perfis_usuarios').insert([{ usuario: user.toLowerCase(), senha: senha }]);
             if(error) return alert("Erro ao salvar perfil no Supabase: " + error.message);
 
             localStorage.setItem(KEY_SESSION, user.toLowerCase());
@@ -599,7 +601,8 @@
 
             if(!user || !senha) return alert("Por favor, preencha o usuário e a senha.");
 
-            const { data: conta, error } = await supabase.from('perfis_usuarios').select('*').eq('usuario', user).maybeSingle();
+            // Atualizado para usar supabaseClient
+            const { data: conta, error } = await supabaseClient.from('perfis_usuarios').select('*').eq('usuario', user).maybeSingle();
 
             if(conta && conta.senha === senha) {
                 localStorage.setItem(KEY_SESSION, conta.usuario);
@@ -621,7 +624,8 @@
                 document.getElementById('conteudo-sistema').style.display = 'block';
                 document.getElementById('lbl-nome-usuario').innerText = usuarioLogado;
                 
-                const { data: perfil } = await supabase.from('perfis_usuarios').select('config_sinal, config_valor').eq('usuario', usuarioLogado).maybeSingle();
+                // Atualizado para usar supabaseClient
+                const { data: perfil } = await supabaseClient.from('perfis_usuarios').select('config_sinal, config_valor').eq('usuario', usuarioLogado).maybeSingle();
                 if (perfil) {
                     configAnterior = { sinal: perfil.config_sinal, valor: perfil.config_valor };
                     document.getElementById('sinal-anterior').value = configAnterior.sinal;
@@ -639,7 +643,8 @@
         async function carregarDadosDoBanco() {
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
             
-            let { data: regs } = await supabase.from('registros_ponto').select('*').eq('usuario', usuarioLogado);
+            // Atualizado para usar supabaseClient
+            let { data: regs } = await supabaseClient.from('registros_ponto').select('*').eq('usuario', usuarioLogado);
             listaRegistros = (regs || []).map(r => ({
                 id: r.id,
                 data: r.data,
@@ -650,7 +655,8 @@
                 comprovante: r.comprovante_url
             }));
 
-            let { data: exts } = await supabase.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
+            // Atualizado para usar supabaseClient
+            let { data: exts } = await supabaseClient.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
             extrasAprovadas = {};
             (exts || []).forEach(e => {
                 extrasAprovadas[e.data] = e.aprovado;
@@ -708,7 +714,8 @@
                 comprovante_url: null
             };
 
-            await supabase.from('registros_ponto').insert([novoReg]);
+            // Atualizado para usar supabaseClient
+            await supabaseClient.from('registros_ponto').insert([novoReg]);
             await verificarSessao();
         });
 
@@ -717,7 +724,8 @@
             const sinal = document.getElementById('sinal-anterior').value;
             const valor = document.getElementById('valor-anterior').value;
 
-            await supabase.from('perfis_usuarios')
+            // Atualizado para usar supabaseClient
+            await supabaseClient.from('perfis_usuarios')
                 .update({ config_sinal: sinal, config_valor: valor })
                 .eq('usuario', usuarioLogado);
                 
@@ -725,9 +733,7 @@
             await verificarSessao();
         });
 
-        // O restante das funções matemáticas e gerenciais permanecem idênticas à regra interna do sistema original.
         function atualizarCamposHorarioEVisualizacao() {
-            // Renderização nativa da tabela baseada em 'listaRegistros'
             tabelaCorpo.innerHTML = "";
             listaRegistros.forEach(reg => {
                 const tr = document.createElement('tr');
@@ -738,7 +744,8 @@
 
         async function deletarRegistro(id) {
             if(confirm("Confirmar a exclusão deste item?")) {
-                await supabase.from('registros_ponto').delete().eq('id', id);
+                // Atualizado para usar supabaseClient
+                await supabaseClient.from('registros_ponto').delete().eq('id', id);
                 await verificarSessao();
             }
         }
