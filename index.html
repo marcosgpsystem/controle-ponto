@@ -548,13 +548,13 @@
         // --- CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+         
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const KEY_SESSION = 'ponto_inteligente_session'; 
         let configAnterior = { sinal: "+", valor: "00:00" };
 
-        let listaRegistros = []; // Guarda todos os registros do banco
+        let listaRegistros = []; 
         let extrasAprovadas = {};
         let idRegistroModalAtual = null;
 
@@ -614,7 +614,6 @@
             window.location.reload();
         });
 
-        // Ouvir a mudança de data no calendário para filtrar dinamicamente
         inputData.addEventListener('change', () => {
             filtrarEAparentarDadosDoDia();
         });
@@ -652,7 +651,7 @@
                 horario: r.horario,
                 tipoLancamento: r.tipo_lancamento,
                 observacao: r.observacao || '',
-                comprovante: r.comprovante_url
+                comprovante: r.comprovante_url // Carrega a string Base64 da imagem salva
             }));
 
             let { data: exts } = await supabaseClient.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
@@ -662,30 +661,28 @@
             });
         }
 
-        // --- FILTRAGEM EXCLUSIVA PELA DATA SELECIONADA ---
         function filtrarEAparentarDadosDoDia() {
             const dataSelecionada = inputData.value;
             tabelaCorpo.innerHTML = "";
 
-            // Filtra os registros pertencentes apenas ao dia selecionado no input
             const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada);
-
-            // Ordena por horário para ficar organizado
             registrosDoDia.sort((a, b) => converterParaMinutos(a.horario) - converterParaMinutos(b.horario));
 
             registrosDoDia.forEach(reg => {
                 const tr = document.createElement('tr');
                 
-                // Define as badges com base no tipo idêntico ao layout original
                 let classeBadge = "badge-entrada";
                 if(reg.tipo.includes("Almoço")) classeBadge = "badge-almoco";
                 else if(reg.tipo.includes("Volta")) classeBadge = "badge-volta";
                 else if(reg.tipo.includes("Saída Final")) classeBadge = "badge-saida";
                 else if(reg.tipoLancamento === 'abono') classeBadge = "badge-abono";
 
+                // Valida se existe imagem anexada para exibir o indicador visual original 📄
+                const iconeComprovante = reg.comprovante ? `<span style="cursor:pointer; margin-left: 5px;" onclick="visualizarImagem('${reg.id}')" title="Ver Comprovante">📄</span>` : '';
+
                 tr.innerHTML = `
                     <td>${reg.data.split('-').reverse().join('/')}</td>
-                    <td><span class="badge ${classeBadge}">${reg.tipo}</span></td>
+                    <td><span class="badge ${classeBadge}">${reg.tipo}</span> ${iconeComprovante}</td>
                     <td><strong>${reg.horario}</strong></td>
                     <td>
                         <button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs</button>
@@ -698,11 +695,8 @@
             calcularResumosERenderizar(registrosDoDia);
         }
 
-        // Lógica matemática simplificada para preencher os cards informativos superiores
         function calcularResumosERenderizar(registrosDoDia) {
             let totalTrabalhado = 0;
-            
-            // Filtra entradas e saídas ordenadas para calcular o intervalo dinâmico de horas
             const pontosNormais = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
             for(let i = 0; i < pontosNormais.length; i += 2) {
                 if(pontosNormais[i] && pontosNormais[i+1]) {
@@ -712,7 +706,6 @@
                 }
             }
 
-            // Se for justificativa/abono lança direto as 8h (480 minutos)
             const temAbono = registrosDoDia.some(r => r.tipoLancamento === 'abono');
             if(temAbono) totalTrabalhado = JORNADA_DIARIA;
 
@@ -724,7 +717,6 @@
             const txtStatus = document.getElementById('txt-ponto-status');
             const barra = document.getElementById('barra-progresso');
 
-            // Atualiza a barra de progresso visual do dia
             const porcentagem = Math.min((totalTrabalhado / JORNADA_DIARIA) * 100, 100);
             barra.style.width = `${porcentagem}%`;
 
@@ -742,7 +734,6 @@
                 txtStatus.style.color = "#10b981";
             }
 
-            // Atualiza também os contadores gerais com base na lista de todos os meses
             document.getElementById('txt-mes-dias').innerText = `${new Set(listaRegistros.map(r => r.data)).size} dias`;
         }
 
@@ -772,15 +763,44 @@
             return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
         }
 
-        // --- AÇÕES DOS BOTÕES ---
+        // --- CONVERSOR AUXILIAR DE IMAGEM PARA STRING BASE64 ---
+        function obterBase64DeArquivo(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Visualizador básico da imagem salva no ponto
+        function visualizarImagem(id) {
+            const reg = listaRegistros.find(r => r.id === id);
+            if(reg && reg.comprovante) {
+                const novaJanela = window.open();
+                novaJanela.document.write(`<img src="${reg.comprovante}" style="max-width:100%; height:auto;" alt="Comprovante">`);
+            }
+        }
+
+        // --- REGISTRO DE HORÁRIO COM SUPORTE A FOTO ---
         document.getElementById('btn-registrar').addEventListener('click', async function() {
             const data = inputData.value;
             const tipo = inputTipo.value;
             const hora = inputHora.value;
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
+            const inputFoto = document.getElementById('ponto-comprovante');
 
             if (!data || !hora) return alert("Preencha todos os campos!");
             
+            let stringImagemBase64 = null;
+            if (inputFoto.files && inputFoto.files[0]) {
+                try {
+                    stringImagemBase64 = await obterBase64DeArquivo(inputFoto.files[0]);
+                } catch (e) {
+                    return alert("Erro ao processar imagem anexada.");
+                }
+            }
+
             const novoReg = {
                 id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
                 usuario: usuarioLogado,
@@ -789,10 +809,11 @@
                 tipo: tipo,
                 tipo_lancamento: 'ponto',
                 observacao: '',
-                comprovante_url: null
+                comprovante_url: stringImagemBase64 // Grava com sucesso a imagem convertida
             };
 
             await supabaseClient.from('registros_ponto').insert([novoReg]);
+            inputFoto.value = ""; // Limpa campo de arquivo
             await carregarDadosDoBanco();
             filtrarEAparentarDadosDoDia();
         });
@@ -838,7 +859,64 @@
             }
         }
 
-        // --- SISTEMA DE MODAL DE OBSERVAÇÕES ---
+        // --- BACKUP INTEGRADO COM EXPORTAÇÃO COMPLETA DE IMAGENS ---
+        function exportarBackupJSON() {
+            const dadosExportacao = {
+                usuario: localStorage.getItem(KEY_SESSION),
+                config_anterior: configAnterior,
+                extras_aprovadas: extrasAprovadas,
+                payload: listaRegistros // Já exporta os registros incluindo as fotos em formato de texto seguro
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dadosExportacao));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `backup_ponto_${localStorage.getItem(KEY_SESSION)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importarBackupJSON(event) {
+            const arquivo = event.target.files[0];
+            if (!arquivo) return;
+
+            const leitor = new FileReader();
+            leitor.onload = async function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    const usuarioLogado = localStorage.getItem(KEY_SESSION);
+
+                    if (dados.payload && Array.isArray(dados.payload)) {
+                        // Faz um lote de salvamento no Supabase para restaurar os itens
+                        for (const item of dados.payload) {
+                            const structReg = {
+                                id: item.id,
+                                usuario: usuarioLogado,
+                                data: item.data,
+                                horario: item.horario,
+                                tipo: item.tipo,
+                                tipo_lancamento: item.tipoLancamento,
+                                observacao: item.observacao,
+                                comprovante_url: item.comprovante // Restaura a foto perfeitamente
+                            };
+                            
+                            // Remove duplicados locais se houverem, reinserindo o backup atualizado
+                            await supabaseClient.from('registros_ponto').delete().eq('id', item.id);
+                            await supabaseClient.from('registros_ponto').insert([structReg]);
+                        }
+                        
+                        alert("📦 Backup importado com sucesso direto no Supabase!");
+                        window.location.reload();
+                    }
+                } catch(err) {
+                    alert("❌ O arquivo enviado é inválido ou está corrompido.");
+                }
+            };
+            leitor.readAsText(arquivo);
+        }
+
+        // --- MODAL DE OBSERVAÇÕES ---
         function abrirModalObservacao(id) {
             idRegistroModalAtual = id;
             const reg = listaRegistros.find(r => r.id === id);
