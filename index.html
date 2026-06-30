@@ -548,7 +548,8 @@
         // --- CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
-         
+  
+        
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const KEY_SESSION = 'ponto_inteligente_session'; 
@@ -651,7 +652,7 @@
                 horario: r.horario,
                 tipoLancamento: r.tipo_lancamento,
                 observacao: r.observacao || '',
-                comprovante: r.comprovante_url // Carrega a string Base64 da imagem salva
+                comprovante: r.comprovante_url
             }));
 
             let { data: exts } = await supabaseClient.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
@@ -661,9 +662,23 @@
             });
         }
 
+        // --- FILTRAGEM E ATUALIZAÇÃO DA TABELA (RIGOROSAMENTE COM 5 COLUNAS) ---
         function filtrarEAparentarDadosDoDia() {
             const dataSelecionada = inputData.value;
             tabelaCorpo.innerHTML = "";
+
+            // Ajusta dinamicamente os cabeçalhos das colunas se necessário para garantir correspondência exata
+            const thElements = document.querySelectorAll('table thead th');
+            if (thElements.length === 4) {
+                const theadRow = document.querySelector('table thead tr');
+                theadRow.innerHTML = `
+                    <th>Data</th>
+                    <th>Tipo / Descrição</th>
+                    <th>Horário / Status</th>
+                    <th>Anexo</th>
+                    <th>Ações</th>
+                `;
+            }
 
             const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada);
             registrosDoDia.sort((a, b) => converterParaMinutos(a.horario) - converterParaMinutos(b.horario));
@@ -677,16 +692,19 @@
                 else if(reg.tipo.includes("Saída Final")) classeBadge = "badge-saida";
                 else if(reg.tipoLancamento === 'abono') classeBadge = "badge-abono";
 
-                // Valida se existe imagem anexada para exibir o indicador visual original 📄
-                const iconeComprovante = reg.comprovante ? `<span style="cursor:pointer; margin-left: 5px;" onclick="visualizarImagem('${reg.id}')" title="Ver Comprovante">📄</span>` : '';
+                // Formatação exata da estrutura de colunas do seu layout original
+                const celulaAnexo = reg.comprovante 
+                    ? `<span style="cursor:pointer; font-size: 1.15rem;" onclick="visualizarImagem('${reg.id}')" title="Ver Comprovante">📄</span>` 
+                    : `<span style="color: #cbd5e1;">-</span>`;
 
                 tr.innerHTML = `
-                    <td>${reg.data.split('-').reverse().join('/')}</td>
-                    <td><span class="badge ${classeBadge}">${reg.tipo}</span> ${iconeComprovante}</td>
-                    <td><strong>${reg.horario}</strong></td>
+                    <td style="color: #475569; font-weight: 500;">${reg.data.split('-').reverse().join('/')}</td>
+                    <td><span class="badge ${classeBadge}">${reg.tipo}</span></td>
+                    <td style="color: #0f172a; font-weight: 700;">${reg.horario}</td>
+                    <td style="text-align: left; padding-left: 1.5rem;">${celulaAnexo}</td>
                     <td>
-                        <button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs</button>
-                        <button class="btn btn-danger-outline" style="height:28px; padding:0 0.5rem; font-size:11px;" onclick="deletarRegistro('${reg.id}')">🗑️</button>
+                        <button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px; font-weight: 600;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs</button>
+                        <button class="btn btn-danger-outline" style="height:28px; padding:0 0.5rem; font-size:11px; font-weight: 600;" onclick="deletarRegistro('${reg.id}')">🗑️</button>
                     </td>
                 `;
                 tabelaCorpo.appendChild(tr);
@@ -763,7 +781,6 @@
             return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
         }
 
-        // --- CONVERSOR AUXILIAR DE IMAGEM PARA STRING BASE64 ---
         function obterBase64DeArquivo(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -773,7 +790,6 @@
             });
         }
 
-        // Visualizador básico da imagem salva no ponto
         function visualizarImagem(id) {
             const reg = listaRegistros.find(r => r.id === id);
             if(reg && reg.comprovante) {
@@ -782,7 +798,7 @@
             }
         }
 
-        // --- REGISTRO DE HORÁRIO COM SUPORTE A FOTO ---
+        // --- REGISTRO DE HORÁRIO ---
         document.getElementById('btn-registrar').addEventListener('click', async function() {
             const data = inputData.value;
             const tipo = inputTipo.value;
@@ -809,11 +825,11 @@
                 tipo: tipo,
                 tipo_lancamento: 'ponto',
                 observacao: '',
-                comprovante_url: stringImagemBase64 // Grava com sucesso a imagem convertida
+                comprovante_url: stringImagemBase64
             };
 
             await supabaseClient.from('registros_ponto').insert([novoReg]);
-            inputFoto.value = ""; // Limpa campo de arquivo
+            inputFoto.value = ""; 
             await carregarDadosDoBanco();
             filtrarEAparentarDadosDoDia();
         });
@@ -859,13 +875,13 @@
             }
         }
 
-        // --- BACKUP INTEGRADO COM EXPORTAÇÃO COMPLETA DE IMAGENS ---
+        // --- EXPORTAR BACKUP JSON ---
         function exportarBackupJSON() {
             const dadosExportacao = {
                 usuario: localStorage.getItem(KEY_SESSION),
                 config_anterior: configAnterior,
                 extras_aprovadas: extrasAprovadas,
-                payload: listaRegistros // Já exporta os registros incluindo as fotos em formato de texto seguro
+                payload: listaRegistros
             };
 
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dadosExportacao));
@@ -888,7 +904,6 @@
                     const usuarioLogado = localStorage.getItem(KEY_SESSION);
 
                     if (dados.payload && Array.isArray(dados.payload)) {
-                        // Faz um lote de salvamento no Supabase para restaurar os itens
                         for (const item of dados.payload) {
                             const structReg = {
                                 id: item.id,
@@ -896,12 +911,11 @@
                                 data: item.data,
                                 horario: item.horario,
                                 tipo: item.tipo,
-                                tipo_lancamento: item.tipoLancamento,
+                                tipo_lancamento: item.tipoLancamento || 'ponto',
                                 observacao: item.observacao,
-                                comprovante_url: item.comprovante // Restaura a foto perfeitamente
+                                comprovante_url: item.comprovante
                             };
                             
-                            // Remove duplicados locais se houverem, reinserindo o backup atualizado
                             await supabaseClient.from('registros_ponto').delete().eq('id', item.id);
                             await supabaseClient.from('registros_ponto').insert([structReg]);
                         }
