@@ -545,17 +545,16 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO DO SUPABASE (PREPARADO PARA GITHUB SEGURADO) ---
+        // --- CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
         
-        // CORREÇÃO AQUI: Alterado o nome da constante para evitar o conflito com a biblioteca global
-         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const KEY_SESSION = 'ponto_inteligente_session'; 
         let configAnterior = { sinal: "+", valor: "00:00" };
 
-        let listaRegistros = [];
+        let listaRegistros = []; // Guarda todos os registros do banco
         let extrasAprovadas = {};
         let idRegistroModalAtual = null;
 
@@ -566,7 +565,7 @@
         const inputHora = document.getElementById('ponto-hora');
         const tabelaCorpo = document.getElementById('tabela-corpo');
 
-        // --- SISTEMA DE AUTENTICAÇÃO INTEGRADO AO SUPABASE ---
+        // --- CONTROLE DE TELAS (AUTH / SISTEMA) ---
         document.getElementById('ir-para-cadastro').addEventListener('click', () => {
             document.getElementById('wrapper-login').style.display = 'none';
             document.getElementById('wrapper-cadastro').style.display = 'block';
@@ -583,12 +582,11 @@
 
             if(!user || !senha) return alert("Preencha todos os campos do cadastro!");
 
-            // Atualizado para usar supabaseClient
             const { data: existente } = await supabaseClient.from('perfis_usuarios').select('usuario').eq('usuario', user.toLowerCase()).maybeSingle();
             if(existente) return alert("Este usuário já existe!");
 
             const { error } = await supabaseClient.from('perfis_usuarios').insert([{ usuario: user.toLowerCase(), senha: senha }]);
-            if(error) return alert("Erro ao salvar perfil no Supabase: " + error.message);
+            if(error) return alert("Erro ao salvar perfil: " + error.message);
 
             localStorage.setItem(KEY_SESSION, user.toLowerCase());
             alert("Conta criada com sucesso!");
@@ -601,8 +599,7 @@
 
             if(!user || !senha) return alert("Por favor, preencha o usuário e a senha.");
 
-            // Atualizado para usar supabaseClient
-            const { data: conta, error } = await supabaseClient.from('perfis_usuarios').select('*').eq('usuario', user).maybeSingle();
+            const { data: conta } = await supabaseClient.from('perfis_usuarios').select('*').eq('usuario', user).maybeSingle();
 
             if(conta && conta.senha === senha) {
                 localStorage.setItem(KEY_SESSION, conta.usuario);
@@ -617,6 +614,11 @@
             window.location.reload();
         });
 
+        // Ouvir a mudança de data no calendário para filtrar dinamicamente
+        inputData.addEventListener('change', () => {
+            filtrarEAparentarDadosDoDia();
+        });
+
         async function verificarSessao() {
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
             if(usuarioLogado) {
@@ -624,7 +626,6 @@
                 document.getElementById('conteudo-sistema').style.display = 'block';
                 document.getElementById('lbl-nome-usuario').innerText = usuarioLogado;
                 
-                // Atualizado para usar supabaseClient
                 const { data: perfil } = await supabaseClient.from('perfis_usuarios').select('config_sinal, config_valor').eq('usuario', usuarioLogado).maybeSingle();
                 if (perfil) {
                     configAnterior = { sinal: perfil.config_sinal, valor: perfil.config_valor };
@@ -633,7 +634,7 @@
                 }
 
                 await carregarDadosDoBanco();
-                atualizarCamposHorarioEVisualizacao();
+                filtrarEAparentarDadosDoDia();
             } else {
                 document.getElementById('modal-auth').style.display = 'flex';
                 document.getElementById('conteudo-sistema').style.display = 'none';
@@ -643,7 +644,6 @@
         async function carregarDadosDoBanco() {
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
             
-            // Atualizado para usar supabaseClient
             let { data: regs } = await supabaseClient.from('registros_ponto').select('*').eq('usuario', usuarioLogado);
             listaRegistros = (regs || []).map(r => ({
                 id: r.id,
@@ -651,16 +651,99 @@
                 tipo: r.tipo,
                 horario: r.horario,
                 tipoLancamento: r.tipo_lancamento,
-                observacao: r.observacao,
+                observacao: r.observacao || '',
                 comprovante: r.comprovante_url
             }));
 
-            // Atualizado para usar supabaseClient
             let { data: exts } = await supabaseClient.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
             extrasAprovadas = {};
             (exts || []).forEach(e => {
                 extrasAprovadas[e.data] = e.aprovado;
             });
+        }
+
+        // --- FILTRAGEM EXCLUSIVA PELA DATA SELECIONADA ---
+        function filtrarEAparentarDadosDoDia() {
+            const dataSelecionada = inputData.value;
+            tabelaCorpo.innerHTML = "";
+
+            // Filtra os registros pertencentes apenas ao dia selecionado no input
+            const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada);
+
+            // Ordena por horário para ficar organizado
+            registrosDoDia.sort((a, b) => converterParaMinutos(a.horario) - converterParaMinutos(b.horario));
+
+            registrosDoDia.forEach(reg => {
+                const tr = document.createElement('tr');
+                
+                // Define as badges com base no tipo idêntico ao layout original
+                let classeBadge = "badge-entrada";
+                if(reg.tipo.includes("Almoço")) classeBadge = "badge-almoco";
+                else if(reg.tipo.includes("Volta")) classeBadge = "badge-volta";
+                else if(reg.tipo.includes("Saída Final")) classeBadge = "badge-saida";
+                else if(reg.tipoLancamento === 'abono') classeBadge = "badge-abono";
+
+                tr.innerHTML = `
+                    <td>${reg.data.split('-').reverse().join('/')}</td>
+                    <td><span class="badge ${classeBadge}">${reg.tipo}</span></td>
+                    <td><strong>${reg.horario}</strong></td>
+                    <td>
+                        <button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs</button>
+                        <button class="btn btn-danger-outline" style="height:28px; padding:0 0.5rem; font-size:11px;" onclick="deletarRegistro('${reg.id}')">🗑️</button>
+                    </td>
+                `;
+                tabelaCorpo.appendChild(tr);
+            });
+
+            calcularResumosERenderizar(registrosDoDia);
+        }
+
+        // Lógica matemática simplificada para preencher os cards informativos superiores
+        function calcularResumosERenderizar(registrosDoDia) {
+            let totalTrabalhado = 0;
+            
+            // Filtra entradas e saídas ordenadas para calcular o intervalo dinâmico de horas
+            const pontosNormais = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
+            for(let i = 0; i < pontosNormais.length; i += 2) {
+                if(pontosNormais[i] && pontosNormais[i+1]) {
+                    const m1 = converterParaMinutos(pontosNormais[i].horario);
+                    const m2 = converterParaMinutos(pontosNormais[i+1].horario);
+                    totalTrabalhado += (m2 - m1);
+                }
+            }
+
+            // Se for justificativa/abono lança direto as 8h (480 minutos)
+            const temAbono = registrosDoDia.some(r => r.tipoLancamento === 'abono');
+            if(temAbono) totalTrabalhado = JORNADA_DIARIA;
+
+            document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(totalTrabalhado);
+
+            const saldo = JORNADA_DIARIA - totalTrabalhado;
+            const txtSaldo = document.getElementById('txt-dia-saldo');
+            const labelSaldo = document.getElementById('label-dia-saldo');
+            const txtStatus = document.getElementById('txt-ponto-status');
+            const barra = document.getElementById('barra-progresso');
+
+            // Atualiza a barra de progresso visual do dia
+            const porcentagem = Math.min((totalTrabalhado / JORNADA_DIARIA) * 100, 100);
+            barra.style.width = `${porcentagem}%`;
+
+            if(saldo > 0) {
+                labelSaldo.innerText = "Faltam para 8 horas";
+                txtSaldo.innerText = formatarMinutos(saldo);
+                txtSaldo.style.color = "#f59e0b";
+                txtStatus.innerText = "PONTO INCOMPLETO";
+                txtStatus.style.color = "#dc2626";
+            } else {
+                labelSaldo.innerText = "Hora Extra Realizada";
+                txtSaldo.innerText = formatarMinutos(Math.abs(saldo));
+                txtSaldo.style.color = "#10b981";
+                txtStatus.innerText = "JORNADA CONCLUÍDA";
+                txtStatus.style.color = "#10b981";
+            }
+
+            // Atualiza também os contadores gerais com base na lista de todos os meses
+            document.getElementById('txt-mes-dias').innerText = `${new Set(listaRegistros.map(r => r.data)).size} dias`;
         }
 
         window.onload = function() {
@@ -689,12 +772,7 @@
             return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
         }
 
-        function validarDataFutura(dataString) {
-            const hojeStr = new Date().toISOString().split('T')[0];
-            return dataString > hojeStr;
-        }
-
-        // --- INTEGRAÇÃO DOS BOTÕES COMPORTAMENTAIS COM O SUPABASE ---
+        // --- AÇÕES DOS BOTÕES ---
         document.getElementById('btn-registrar').addEventListener('click', async function() {
             const data = inputData.value;
             const tipo = inputTipo.value;
@@ -714,9 +792,32 @@
                 comprovante_url: null
             };
 
-            // Atualizado para usar supabaseClient
             await supabaseClient.from('registros_ponto').insert([novoReg]);
-            await verificarSessao();
+            await carregarDadosDoBanco();
+            filtrarEAparentarDadosDoDia();
+        });
+
+        document.getElementById('btn-abonar').addEventListener('click', async function() {
+            const data = inputData.value;
+            const justificativa = document.getElementById('ponto-justificativa').value;
+            const usuarioLogado = localStorage.getItem(KEY_SESSION);
+
+            if(!justificativa) return alert("Selecione uma justificativa válida!");
+
+            const novoReg = {
+                id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Date.now().toString(36),
+                usuario: usuarioLogado,
+                data: data,
+                horario: "08:00",
+                tipo: `Abono: ${justificativa}`,
+                tipo_lancamento: 'abono',
+                observacao: '',
+                comprovante_url: null
+            };
+
+            await supabaseClient.from('registros_ponto').insert([novoReg]);
+            await carregarDadosDoBanco();
+            filtrarEAparentarDadosDoDia();
         });
 
         document.getElementById('btn-fixar-anterior').addEventListener('click', async function() {
@@ -724,31 +825,40 @@
             const sinal = document.getElementById('sinal-anterior').value;
             const valor = document.getElementById('valor-anterior').value;
 
-            // Atualizado para usar supabaseClient
-            await supabaseClient.from('perfis_usuarios')
-                .update({ config_sinal: sinal, config_valor: valor })
-                .eq('usuario', usuarioLogado);
-                
-            alert("Configuração de saldo anterior fixada com sucesso!");
+            await supabaseClient.from('perfis_usuarios').update({ config_sinal: sinal, config_valor: valor }).eq('usuario', usuarioLogado);
+            alert("Configuração de saldo anterior fixada!");
             await verificarSessao();
         });
 
-        function atualizarCamposHorarioEVisualizacao() {
-            tabelaCorpo.innerHTML = "";
-            listaRegistros.forEach(reg => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${reg.data}</td><td><span class="badge badge-entrada">${reg.tipo}</span></td><td>${reg.horario}</td><td><button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px;" onclick="deletarRegistro('${reg.id}')">Excluir</button></td>`;
-                tabelaCorpo.appendChild(tr);
-            });
-        }
-
         async function deletarRegistro(id) {
             if(confirm("Confirmar a exclusão deste item?")) {
-                // Atualizado para usar supabaseClient
                 await supabaseClient.from('registros_ponto').delete().eq('id', id);
-                await verificarSessao();
+                await carregarDadosDoBanco();
+                filtrarEAparentarDadosDoDia();
             }
         }
+
+        // --- SISTEMA DE MODAL DE OBSERVAÇÕES ---
+        function abrirModalObservacao(id) {
+            idRegistroModalAtual = id;
+            const reg = listaRegistros.find(r => r.id === id);
+            document.getElementById('modal-obs-texto').value = reg ? reg.observacao : '';
+            document.getElementById('modal-observacao').style.display = 'flex';
+        }
+
+        document.getElementById('btn-fechar-modal').addEventListener('click', () => {
+            document.getElementById('modal-observacao').style.display = 'none';
+        });
+
+        document.getElementById('btn-salvar-modal').addEventListener('click', async () => {
+            const texto = document.getElementById('modal-obs-texto').value;
+            if(idRegistroModalAtual) {
+                await supabaseClient.from('registros_ponto').update({ observacao: texto }).eq('id', idRegistroModalAtual);
+                await carregarDadosDoBanco();
+                filtrarEAparentarDadosDoDia();
+            }
+            document.getElementById('modal-observacao').style.display = 'none';
+        });
     </script>
 </body>
 </html>
