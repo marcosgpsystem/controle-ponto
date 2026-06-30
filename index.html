@@ -548,7 +548,6 @@
         // --- CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
-  
         
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -645,14 +644,16 @@
             const usuarioLogado = localStorage.getItem(KEY_SESSION);
             
             let { data: regs } = await supabaseClient.from('registros_ponto').select('*').eq('usuario', usuarioLogado);
+            
+            // Tratamento duplo de propriedades para garantir compatibilidade total com o banco de dados antigo/novo
             listaRegistros = (regs || []).map(r => ({
                 id: r.id,
                 data: r.data,
                 tipo: r.tipo,
                 horario: r.horario,
-                tipoLancamento: r.tipo_lancamento,
+                tipoLancamento: r.tipo_lancamento || r.tipoLancamento || 'ponto',
                 observacao: r.observacao || '',
-                comprovante: r.comprovante_url
+                comprovante: r.comprovante_url || r.comprovante
             }));
 
             let { data: exts } = await supabaseClient.from('extras_aprovadas').select('*').eq('usuario', usuarioLogado);
@@ -662,20 +663,18 @@
             });
         }
 
-        // --- FILTRAGEM E ATUALIZAÇÃO DA TABELA (RIGOROSAMENTE COM 5 COLUNAS) ---
+        // --- FILTRAGEM E RENDERIZAÇÃO 100% IDÊNTICA AO LAYOUT EXIGIDO ---
         function filtrarEAparentarDadosDoDia() {
             const dataSelecionada = inputData.value;
             tabelaCorpo.innerHTML = "";
 
-            // Ajusta dinamicamente os cabeçalhos das colunas se necessário para garantir correspondência exata
-            const thElements = document.querySelectorAll('table thead th');
-            if (thElements.length === 4) {
-                const theadRow = document.querySelector('table thead tr');
+            // Garante que o cabeçalho volte a ter exatamente as 4 colunas clássicas do print (Data, Tipo / Descrição, Horário / Status, Ações)
+            const theadRow = document.querySelector('table thead tr');
+            if (theadRow) {
                 theadRow.innerHTML = `
                     <th>Data</th>
                     <th>Tipo / Descrição</th>
                     <th>Horário / Status</th>
-                    <th>Anexo</th>
                     <th>Ações</th>
                 `;
             }
@@ -690,21 +689,21 @@
                 if(reg.tipo.includes("Almoço")) classeBadge = "badge-almoco";
                 else if(reg.tipo.includes("Volta")) classeBadge = "badge-volta";
                 else if(reg.tipo.includes("Saída Final")) classeBadge = "badge-saida";
-                else if(reg.tipoLancamento === 'abono') classeBadge = "badge-abono";
+                else if(reg.tipoLancamento === 'abono' || reg.tipo.includes("Abono") || reg.tipo.includes("Dispensa")) classeBadge = "badge-abono";
 
-                // Formatação exata da estrutura de colunas do seu layout original
-                const celulaAnexo = reg.comprovante 
-                    ? `<span style="cursor:pointer; font-size: 1.15rem;" onclick="visualizarImagem('${reg.id}')" title="Ver Comprovante">📄</span>` 
-                    : `<span style="color: #cbd5e1;">-</span>`;
+                // Se houver imagem de comprovante, renderiza o botão "👁️ Ver" azul idêntico ao print original
+                const botaoVerComprovante = reg.comprovante 
+                    ? `<button class="btn btn-primary" style="background-color: #0284c7; border-color: #0284c7; color: white; height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px; font-weight: 600;" onclick="visualizarImagem('${reg.id}')">👁️ Ver</button>` 
+                    : '';
 
                 tr.innerHTML = `
                     <td style="color: #475569; font-weight: 500;">${reg.data.split('-').reverse().join('/')}</td>
                     <td><span class="badge ${classeBadge}">${reg.tipo}</span></td>
                     <td style="color: #0f172a; font-weight: 700;">${reg.horario}</td>
-                    <td style="text-align: left; padding-left: 1.5rem;">${celulaAnexo}</td>
                     <td>
-                        <button class="btn btn-secondary" style="height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px; font-weight: 600;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs</button>
-                        <button class="btn btn-danger-outline" style="height:28px; padding:0 0.5rem; font-size:11px; font-weight: 600;" onclick="deletarRegistro('${reg.id}')">🗑️</button>
+                        ${botaoVerComprovante}
+                        <button class="btn btn-secondary" style="background-color: #1e293b; border-color: #1e293b; color: white; height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px; font-weight: 600;" onclick="abrirModalObservacao('${reg.id}')">📝 Obs.</button>
+                        <button class="btn btn-danger-outline" style="border: 1px solid #f87171; color: #ef4444; background: transparent; height:28px; padding:0 0.5rem; font-size:11px; font-weight: 600; border-radius: 6px;" onclick="deletarRegistro('${reg.id}')">🗑️ Deletar</button>
                     </td>
                 `;
                 tabelaCorpo.appendChild(tr);
@@ -724,7 +723,7 @@
                 }
             }
 
-            const temAbono = registrosDoDia.some(r => r.tipoLancamento === 'abono');
+            const temAbono = registrosDoDia.some(r => r.tipoLancamento === 'abono' || r.tipo.includes("Abono") || r.tipo.includes("Dispensa"));
             if(temAbono) totalTrabalhado = JORNADA_DIARIA;
 
             document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(totalTrabalhado);
@@ -736,23 +735,25 @@
             const barra = document.getElementById('barra-progresso');
 
             const porcentagem = Math.min((totalTrabalhado / JORNADA_DIARIA) * 100, 100);
-            barra.style.width = `${porcentagem}%`;
+            if (barra) barra.style.width = `${porcentagem}%`;
 
             if(saldo > 0) {
-                labelSaldo.innerText = "Faltam para 8 horas";
+                if (labelSaldo) labelSaldo.innerText = "Faltam para 8 horas";
                 txtSaldo.innerText = formatarMinutos(saldo);
                 txtSaldo.style.color = "#f59e0b";
                 txtStatus.innerText = "PONTO INCOMPLETO";
                 txtStatus.style.color = "#dc2626";
             } else {
-                labelSaldo.innerText = "Hora Extra Realizada";
-                txtSaldo.innerText = formatarMinutos(Math.abs(saldo));
+                if (labelSaldo) labelSaldo.innerText = "Saldo positivo do dia";
+                txtSaldo.innerText = `+${formatarMinutos(Math.abs(saldo))}`;
                 txtSaldo.style.color = "#10b981";
-                txtStatus.innerText = "JORNADA CONCLUÍDA";
+                txtStatus.innerText = "PONTO COMPLETO";
                 txtStatus.style.color = "#10b981";
             }
 
-            document.getElementById('txt-mes-dias').innerText = `${new Set(listaRegistros.map(r => r.data)).size} dias`;
+            // Atualização dos indicadores gerais acumulados do mês
+            const txtMesDias = document.getElementById('txt-mes-dias');
+            if (txtMesDias) txtMesDias.innerText = `${new Set(listaRegistros.map(r => r.data)).size} dias`;
         }
 
         window.onload = function() {
@@ -794,7 +795,7 @@
             const reg = listaRegistros.find(r => r.id === id);
             if(reg && reg.comprovante) {
                 const novaJanela = window.open();
-                novaJanela.document.write(`<img src="${reg.comprovante}" style="max-width:100%; height:auto;" alt="Comprovante">`);
+                novaJanela.document.write(`<body style="margin:0; display:flex; justify-content:center; align-items:center; background:#111;"><img src="${reg.comprovante}" style="max-width:100%; max-height:100vh; object-fit:contain;" alt="Comprovante"></body>`);
             }
         }
 
@@ -809,7 +810,7 @@
             if (!data || !hora) return alert("Preencha todos os campos!");
             
             let stringImagemBase64 = null;
-            if (inputFoto.files && inputFoto.files[0]) {
+            if (inputFoto && inputFoto.files && inputFoto.files[0]) {
                 try {
                     stringImagemBase64 = await obterBase64DeArquivo(inputFoto.files[0]);
                 } catch (e) {
@@ -829,7 +830,7 @@
             };
 
             await supabaseClient.from('registros_ponto').insert([novoReg]);
-            inputFoto.value = ""; 
+            if(inputFoto) inputFoto.value = ""; 
             await carregarDadosDoBanco();
             filtrarEAparentarDadosDoDia();
         });
@@ -875,7 +876,7 @@
             }
         }
 
-        // --- EXPORTAR BACKUP JSON ---
+        // --- MANUTENÇÃO COMPLETA DE BACKUP ---
         function exportarBackupJSON() {
             const dadosExportacao = {
                 usuario: localStorage.getItem(KEY_SESSION),
@@ -911,9 +912,9 @@
                                 data: item.data,
                                 horario: item.horario,
                                 tipo: item.tipo,
-                                tipo_lancamento: item.tipoLancamento || 'ponto',
-                                observacao: item.observacao,
-                                comprovante_url: item.comprovante
+                                tipo_lancamento: item.tipoLancamento || item.tipo_lancamento || 'ponto',
+                                observacao: item.observacao || '',
+                                comprovante_url: item.comprovante || item.comprovante_url || null
                             };
                             
                             await supabaseClient.from('registros_ponto').delete().eq('id', item.id);
