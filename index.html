@@ -549,7 +549,7 @@
         const SUPABASE_URL = window.env?.VITE_SUPABASE_URL || "https://lwyasbxiznppnlebvryo.supabase.co";
         const SUPABASE_ANON_KEY = window.env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_YUm3poqv-vFfY4JqtimKRA_nsRnqyvS";
         
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const KEY_SESSION = 'ponto_inteligente_session'; 
         let configAnterior = { sinal: "+", valor: "00:00" };
@@ -627,7 +627,7 @@
                 
                 const { data: perfil } = await supabaseClient.from('perfis_usuarios').select('config_sinal, config_valor').eq('usuario', usuarioLogado).maybeSingle();
                 if (perfil) {
-                    configAnterior = { sinal: perfil.config_sinal, valor: perfil.config_valor };
+                    configAnterior = { sinal: perfil.config_sinal || "+", valor: perfil.config_valor || "00:00" };
                     document.getElementById('sinal-anterior').value = configAnterior.sinal;
                     document.getElementById('valor-anterior').value = configAnterior.valor;
                 }
@@ -645,7 +645,6 @@
             
             let { data: regs } = await supabaseClient.from('registros_ponto').select('*').eq('usuario', usuarioLogado);
             
-            // Tratamento duplo de propriedades para garantir compatibilidade total com o banco de dados antigo/novo
             listaRegistros = (regs || []).map(r => ({
                 id: r.id,
                 data: r.data,
@@ -663,12 +662,10 @@
             });
         }
 
-        // --- FILTRAGEM E RENDERIZAÇÃO 100% IDÊNTICA AO LAYOUT EXIGIDO ---
         function filtrarEAparentarDadosDoDia() {
             const dataSelecionada = inputData.value;
             tabelaCorpo.innerHTML = "";
 
-            // Garante que o cabeçalho volte a ter exatamente as 4 colunas clássicas do print (Data, Tipo / Descrição, Horário / Status, Ações)
             const theadRow = document.querySelector('table thead tr');
             if (theadRow) {
                 theadRow.innerHTML = `
@@ -691,7 +688,6 @@
                 else if(reg.tipo.includes("Saída Final")) classeBadge = "badge-saida";
                 else if(reg.tipoLancamento === 'abono' || reg.tipo.includes("Abono") || reg.tipo.includes("Dispensa")) classeBadge = "badge-abono";
 
-                // Se houver imagem de comprovante, renderiza o botão "👁️ Ver" azul idêntico ao print original
                 const botaoVerComprovante = reg.comprovante 
                     ? `<button class="btn btn-primary" style="background-color: #0284c7; border-color: #0284c7; color: white; height:28px; padding:0 0.5rem; font-size:11px; margin-right: 4px; font-weight: 600;" onclick="visualizarImagem('${reg.id}')">👁️ Ver</button>` 
                     : '';
@@ -709,51 +705,93 @@
                 tabelaCorpo.appendChild(tr);
             });
 
-            calcularResumosERenderizar(registrosDoDia);
+            calcularResumosERenderizar(dataSelecionada);
         }
 
-        function calcularResumosERenderizar(registrosDoDia) {
-            let totalTrabalhado = 0;
-            const pontosNormais = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
-            for(let i = 0; i < pontosNormais.length; i += 2) {
-                if(pontosNormais[i] && pontosNormais[i+1]) {
-                    const m1 = converterParaMinutos(pontosNormais[i].horario);
-                    const m2 = converterParaMinutos(pontosNormais[i+1].horario);
-                    totalTrabalhado += (m2 - m1);
+        function calcularResumosERenderizar(dataSelecionada) {
+            // 1. CÁLCULO VISUAL DO DIA SELECIONADO
+            const registrosDoDia = listaRegistros.filter(r => r.data === dataSelecionada);
+            let totalTrabalhadoDia = 0;
+            const pontosNormaisDia = registrosDoDia.filter(r => r.tipoLancamento === 'ponto');
+            
+            for(let i = 0; i < pontosNormaisDia.length; i += 2) {
+                if(pontosNormaisDia[i] && pontosNormaisDia[i+1]) {
+                    totalTrabalhadoDia += (converterParaMinutos(pontosNormaisDia[i+1].horario) - converterParaMinutos(pontosNormaisDia[i].horario));
                 }
             }
+            if(registrosDoDia.some(r => r.tipoLancamento === 'abono' || r.tipo.includes("Abono") || r.tipo.includes("Dispensa"))) {
+                totalTrabalhadoDia = JORNADA_DIARIA;
+            }
 
-            const temAbono = registrosDoDia.some(r => r.tipoLancamento === 'abono' || r.tipo.includes("Abono") || r.tipo.includes("Dispensa"));
-            if(temAbono) totalTrabalhado = JORNADA_DIARIA;
+            document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(totalTrabalhadoDia);
 
-            document.getElementById('txt-dia-trabalhado').innerText = formatarMinutos(totalTrabalhado);
-
-            const saldo = JORNADA_DIARIA - totalTrabalhado;
+            const saldoDia = JORNADA_DIARIA - totalTrabalhadoDia;
             const txtSaldo = document.getElementById('txt-dia-saldo');
             const labelSaldo = document.getElementById('label-dia-saldo');
             const txtStatus = document.getElementById('txt-ponto-status');
             const barra = document.getElementById('barra-progresso');
 
-            const porcentagem = Math.min((totalTrabalhado / JORNADA_DIARIA) * 100, 100);
+            const porcentagem = Math.min((totalTrabalhadoDia / JORNADA_DIARIA) * 100, 100);
             if (barra) barra.style.width = `${porcentagem}%`;
 
-            if(saldo > 0) {
+            if(saldoDia > 0) {
                 if (labelSaldo) labelSaldo.innerText = "Faltam para 8 horas";
-                txtSaldo.innerText = formatarMinutos(saldo);
+                txtSaldo.innerText = formatarMinutos(saldoDia);
                 txtSaldo.style.color = "#f59e0b";
                 txtStatus.innerText = "PONTO INCOMPLETO";
                 txtStatus.style.color = "#dc2626";
             } else {
                 if (labelSaldo) labelSaldo.innerText = "Saldo positivo do dia";
-                txtSaldo.innerText = `+${formatarMinutos(Math.abs(saldo))}`;
+                txtSaldo.innerText = `+${formatarMinutos(Math.abs(saldoDia))}`;
                 txtSaldo.style.color = "#10b981";
                 txtStatus.innerText = "PONTO COMPLETO";
                 txtStatus.style.color = "#10b981";
             }
 
-            // Atualização dos indicadores gerais acumulados do mês
+            // 2. CÁLCULO DO HISTÓRICO GLOBAL ACUMULADO (BANCO DE HORAS COMPLETO)
+            let saldoAcumuladoMinutos = 0;
+            
+            // Inicializa com o valor fixado anterior
+            const minutosAnteriores = converterParaMinutos(configAnterior.valor);
+            if (configAnterior.sinal === "+") saldoAcumuladoMinutos += minutosAnteriores;
+            else saldoAcumuladoMinutos -= minutosAnteriores;
+
+            // Agrupa todos os dias que possuem algum registro para calcular o saldo dia por dia
+            const todosOsDias = [...new Set(listaRegistros.map(r => r.data))];
+            
+            todosOsDias.forEach(dia => {
+                const regsDoDia = listaRegistros.filter(r => r.data === dia);
+                let trabalhadoNoDia = 0;
+                
+                const normais = regsDoDia.filter(r => r.tipoLancamento === 'ponto').sort((a, b) => converterParaMinutos(a.horario) - converterParaMinutos(b.horario));
+                for(let i = 0; i < normais.length; i += 2) {
+                    if(normais[i] && normais[i+1]) {
+                        trabalhadoNoDia += (converterParaMinutos(normais[i+1].horario) - converterParaMinutos(normais[i].horario));
+                    }
+                }
+                if(regsDoDia.some(r => r.tipoLancamento === 'abono' || r.tipo.includes("Abono") || r.tipo.includes("Dispensa"))) {
+                    trabalhadoNoDia = JORNADA_DIARIA;
+                }
+
+                // Saldo do dia = trabalhado - 8h obrigatórias
+                const saldoDoDiaCalculado = trabalhadoNoDia - JORNADA_DIARIA;
+                saldoAcumuladoMinutos += saldoDoDiaCalculado;
+            });
+
+            // Atualiza os Cards Superiores Globais
+            const txtBancoHoras = document.getElementById('txt-banco-horas');
+            if (txtBancoHoras) {
+                if (saldoAcumuladoMinutos >= 0) {
+                    txtBancoHoras.innerText = `+${formatarMinutos(saldoAcumuladoMinutos)}`;
+                    txtBancoHoras.style.color = "#10b981";
+                } else {
+                    txtBancoHoras.innerText = `-${formatarMinutos(Math.abs(saldoAcumuladoMinutos))}`;
+                    txtBancoHoras.style.color = "#ef4444";
+                }
+            }
+
             const txtMesDias = document.getElementById('txt-mes-dias');
-            if (txtMesDias) txtMesDias.innerText = `${new Set(listaRegistros.map(r => r.data)).size} dias`;
+            if (txtMesDias) txtMesDias.innerText = `${todosOsDias.length} dias`;
         }
 
         window.onload = function() {
@@ -763,7 +801,41 @@
 
             definirHoraAtual();
             verificarSessao();
+            
+            // Vincula as funções novas aos botões de limpeza estrutural da interface original
+            const btnLimparDia = document.getElementById('btn-limpar-dia') || document.querySelector('[onclick*=\"limparDadosDoDia\"]');
+            if(btnLimparDia) {
+                btnLimparDia.removeAttribute('onclick');
+                btnLimparDia.addEventListener('click', limparDadosDoDiaSupabase);
+            }
+            const btnLimparTudo = document.getElementById('btn-limpar-tudo') || document.querySelector('[onclick*=\"limparTodoHistorico\"]');
+            if(btnLimparTudo) {
+                btnLimparTudo.removeAttribute('onclick');
+                btnLimparTudo.addEventListener('click', limparTodoHistoricoSupabase);
+            }
         };
+
+        // --- SISTEMA REFEITO DE EXCLUSÃO PARA O SUPABASE ---
+        async function limparDadosDoDiaSupabase() {
+            const dataSel = inputData.value;
+            const usuarioLogado = localStorage.getItem(KEY_SESSION);
+            if(confirm(`⚠️ Tem certeza que deseja apagar TODOS os registros do dia ${dataSel.split('-').reverse().join('/')}?`)) {
+                await supabaseClient.from('registros_ponto').delete().eq('usuario', usuarioLogado).eq('data', dataSel);
+                await carregarDadosDoBanco();
+                filtrarEAparentarDadosDoDia();
+                alert("Registros do dia limpos com sucesso!");
+            }
+        }
+
+        async function limparTodoHistoricoSupabase() {
+            const usuarioLogado = localStorage.getItem(KEY_SESSION);
+            if(confirm("🚨 ALERTA CRÍTICO: Você tem certeza que deseja APAGAR TODO O SEU HISTÓRICO de pontos permanentemente do banco de dados?")) {
+                await supabaseClient.from('registros_ponto').delete().eq('usuario', usuarioLogado);
+                await carregarDadosDoBanco();
+                filtrarEAparentarDadosDoDia();
+                alert("Todo o seu histórico foi deletado.");
+            }
+        }
 
         function definirHoraAtual() {
             const agora = new Date();
@@ -864,8 +936,9 @@
             const valor = document.getElementById('valor-anterior').value;
 
             await supabaseClient.from('perfis_usuarios').update({ config_sinal: sinal, config_valor: valor }).eq('usuario', usuarioLogado);
+            configAnterior = { sinal, valor };
             alert("Configuração de saldo anterior fixada!");
-            await verificarSessao();
+            filtrarEAparentarDadosDoDia();
         });
 
         async function deletarRegistro(id) {
@@ -876,7 +949,7 @@
             }
         }
 
-        // --- MANUTENÇÃO COMPLETA DE BACKUP ---
+        // --- EXPORTAR / IMPORTAR BACKUP JSON ---
         function exportarBackupJSON() {
             const dadosExportacao = {
                 usuario: localStorage.getItem(KEY_SESSION),
